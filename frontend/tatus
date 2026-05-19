@@ -1,0 +1,17 @@
+[33mcommit 1636980c31664ef3b94568482a1d79e0369b9197[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Albion8825 <ak73616@ubt-uni.net>
+Commit: Albion8825 <ak73616@ubt-uni.net>
+
+    Fix frontend folder
+
+[33mcommit a21fd27e7ef9d459f4ebfdb0ed04dbb6b399fce0[m
+Author: LenartQollaku <lq72878@ubt-uni.net>
+Commit: LenartQollaku <lq72878@ubt-uni.net>
+
+    add gitignore
+
+[33mcommit ceafd620e31180850b2269f02f8d074945247999[m
+Author: LenartQollaku <lq72878@ubt-uni.net>
+Commit: LenartQollaku <lq72878@ubt-uni.net>
+
+    Initial commit
