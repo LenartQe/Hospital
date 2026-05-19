@@ -3,6 +3,7 @@ node_modules/
 
 # Backend build output
 backend/target/
+target/
 
 # Environment files
 .env
