@@ -1,116 +1,107 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
-// react-router-dom components
-import { Link } from "react-router-dom";
-
-// @mui material components
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Card from "@mui/material/Card";
-import Checkbox from "@mui/material/Checkbox";
-
-// Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
+import HospitalAuthLayout from "layouts/authentication/components/HospitalAuthLayout";
+import { hospitalApi } from "api/hospitalApi";
+import { setAuth, homeRouteForRole } from "auth/authStorage";
 
-// Authentication layout components
-import CoverLayout from "layouts/authentication/components/CoverLayout";
+export default function SignUp() {
+  const navigate = useNavigate();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-// Images
-import bgImage from "assets/images/bg-sign-up-cover.jpeg";
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const data = await hospitalApi.auth.registerPatient({ email, password, fullName, phone });
+      setAuth(data);
+      navigate(homeRouteForRole(data.role));
+    } catch (err) {
+      try {
+        const parsed = JSON.parse(err.message);
+        setError(parsed.message || "Regjistrimi dështoi.");
+      } catch {
+        setError(err.message || "Regjistrimi dështoi.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-function Cover() {
   return (
-    <CoverLayout image={bgImage}>
-      <Card>
-        <MDBox
-          variant="gradient"
-          bgColor="info"
-          borderRadius="lg"
-          coloredShadow="success"
-          mx={2}
-          mt={-3}
-          p={3}
-          mb={1}
-          textAlign="center"
-        >
-          <MDTypography variant="h4" fontWeight="medium" color="white" mt={1}>
-            Bashkohu me ne
-          </MDTypography>
-          <MDTypography display="block" variant="button" color="white" my={1}>
-            Shkruaj email dhe fjalëkalim për t&apos;u regjistruar
-          </MDTypography>
-        </MDBox>
-        <MDBox pt={4} pb={3} px={3}>
-          <MDBox component="form" role="form">
-            <MDBox mb={2}>
-              <MDInput type="text" label="Emri" variant="standard" fullWidth />
-            </MDBox>
-            <MDBox mb={2}>
-              <MDInput type="email" label="Email" variant="standard" fullWidth />
-            </MDBox>
-            <MDBox mb={2}>
-              <MDInput type="password" label="Fjalëkalimi" variant="standard" fullWidth />
-            </MDBox>
-            <MDBox display="flex" alignItems="center" ml={-1}>
-              <Checkbox />
-              <MDTypography
-                variant="button"
-                fontWeight="regular"
-                color="text"
-                sx={{ cursor: "pointer", userSelect: "none", ml: -1 }}
-              >
-                &nbsp;&nbsp;Pranoj&nbsp;
-              </MDTypography>
-              <MDTypography
-                component="a"
-                href="#"
-                variant="button"
-                fontWeight="bold"
-                color="info"
-                textGradient
-              >
-                Kushtet dhe termat
-              </MDTypography>
-            </MDBox>
-            <MDBox mt={4} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth>
-                Regjistrohu
-              </MDButton>
-            </MDBox>
-            <MDBox mt={3} mb={1} textAlign="center">
-              <MDTypography variant="button" color="text">
-                Keni tashmë llogari?{" "}
-                <MDTypography
-                  component={Link}
-                  to="/authentication/sign-in"
-                  variant="button"
-                  color="info"
-                  fontWeight="medium"
-                  textGradient
-                >
-                  Hyr
-                </MDTypography>
-              </MDTypography>
-            </MDBox>
+    <HospitalAuthLayout
+      title="Regjistrimi i pacientit"
+      subtitle="Krijoni llogarinë tuaj për të parë diagnozat, barnat dhe terminet."
+    >
+      <Card sx={{ p: 3, boxShadow: "0 8px 32px rgba(34,58,102,0.12)" }}>
+        <MDBox component="form" onSubmit={handleSubmit}>
+          <MDBox mb={2}>
+            <MDInput
+              label="Emri i plotë"
+              fullWidth
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
+          </MDBox>
+          <MDBox mb={2}>
+            <MDInput
+              type="email"
+              label="Email"
+              fullWidth
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </MDBox>
+          <MDBox mb={2}>
+            <MDInput
+              label="Telefoni"
+              fullWidth
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </MDBox>
+          <MDBox mb={2}>
+            <MDInput
+              type="password"
+              label="Fjalëkalimi"
+              fullWidth
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </MDBox>
+          {error ? (
+            <MDTypography variant="caption" color="error" display="block" mb={1}>
+              {error}
+            </MDTypography>
+          ) : null}
+          <MDButton type="submit" variant="gradient" color="info" fullWidth disabled={loading}>
+            {loading ? "Duke u regjistruar…" : "Regjistrohu"}
+          </MDButton>
+          <MDBox mt={2} textAlign="center">
+            <MDTypography
+              component={Link}
+              to="/authentication/sign-in?role=patient"
+              variant="button"
+              color="text"
+            >
+              Kthehu te hyrja
+            </MDTypography>
           </MDBox>
         </MDBox>
       </Card>
-    </CoverLayout>
+    </HospitalAuthLayout>
   );
 }
-
-export default Cover;

@@ -55,7 +55,7 @@ export default function DoctorDetail() {
             </p>
             <p>{doc.bio}</p>
             <Link to="/appointment" className="btn btn-main mt-2">
-              Rezervo takimin
+              Rezervo terminin
             </Link>
           </div>
         </div>

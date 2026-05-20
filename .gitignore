@@ -5,6 +5,9 @@ node_modules/
 backend/target/
 target/
 
+# IDE
+.vscode/
+
 # Environment files
 .env
 .env.local
@@ -17,3 +20,13 @@ target/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Accidental / duplicate root copies (canonical app is in frontend/)
+/tatus
+/frontend/tatus
+/node_modules/
+/src/
+/public/
+/package.json
+/package-lock.json
+/tools/

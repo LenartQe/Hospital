@@ -38,7 +38,7 @@ export default function Appointment() {
         doctorId: Number(form.doctorId),
       })
       .then(() => {
-        setMsg("Kërkesa për takim u dërgua. Stafi ynë do t'ju konfirmojë së shpejti.");
+        setMsg("Kërkesa për termin u dërgua. Stafi ynë do t'ju konfirmojë së shpejti.");
         setForm((f) => ({ ...f, patientName: "", message: "" }));
       })
       .catch((e) => setErr(e.message));
@@ -50,7 +50,7 @@ export default function Appointment() {
         <div className="row justify-content-center">
           <div className="col-lg-8">
             <div className="section-title text-center">
-              <h2 className="text-md text-uppercase letter-spacing mb-1">Rezervo takimin</h2>
+              <h2 className="text-md text-uppercase letter-spacing mb-1">Rezervo terminin</h2>
               <div className="divider mx-auto mb-4" />
             </div>
             {msg && <div className="alert alert-success">{msg}</div>}

@@ -1,8 +1,6 @@
 /**
-=========================================================
-* Hospital System Management — public site + Material Dashboard admin
-=========================================================
-*/
+ * Hospital System — public site + role-based dashboards
+ */
 
 import { useState, useEffect, useMemo } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
@@ -19,8 +17,10 @@ import rtlPlugin from "stylis-plugin-rtl";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 
-import routes from "routes";
+import { routesForRole, allAppRoutes } from "routes";
 import { useMaterialUIController, setMiniSidenav, setLayout } from "context";
+import ProtectedRoute from "auth/ProtectedRoute";
+import { getAuth } from "auth/authStorage";
 
 import brandWhite from "assets/images/logo-ct.png";
 import brandDark from "assets/images/logo-ct-dark.png";
@@ -36,6 +36,8 @@ import DoctorDetail from "hospital-public/pages/DoctorDetail";
 import Appointment from "hospital-public/pages/Appointment";
 import Contact from "hospital-public/pages/Contact";
 
+import "hospital-public/hospital-auth.css";
+
 function isPublicRoute(pathname) {
   if (pathname === "/") return true;
   if (["/about", "/services", "/appointment", "/contact"].includes(pathname)) return true;
@@ -45,9 +47,25 @@ function isPublicRoute(pathname) {
 }
 
 function resolveLayout(pathname) {
-  if (pathname.startsWith("/authentication")) return "vr";
-  if (isPublicRoute(pathname)) return "vr";
-  return "dashboard";
+  if (pathname.startsWith("/authentication")) return "auth";
+  if (isPublicRoute(pathname)) return "public";
+  if (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/hospital") ||
+    pathname.startsWith("/patient") ||
+    pathname.startsWith("/doctor") ||
+    pathname.startsWith("/notifications") ||
+    pathname.startsWith("/profile")
+  ) {
+    return "dashboard";
+  }
+  return "public";
+}
+
+function sidenavTitle(role) {
+  if (role === "PATIENT") return "Pacient — Spitali";
+  if (role === "DOCTOR") return "Mjek — Spitali";
+  return "Administrimi — Spitali";
 }
 
 export default function App() {
@@ -64,6 +82,7 @@ export default function App() {
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
+  const auth = getAuth();
 
   useMemo(() => {
     const cacheRtl = createCache({
@@ -105,24 +124,27 @@ export default function App() {
       if (route.collapse) {
         return getRoutes(route.collapse);
       }
-      if (route.route) {
-        return <Route path={route.route} element={route.component} key={route.key} />;
+      if (!route.route) {
+        return null;
       }
-      return null;
+      const element = route.public ? (
+        route.component
+      ) : (
+        <ProtectedRoute roles={route.roles}>{route.component}</ProtectedRoute>
+      );
+      return <Route path={route.route} element={element} key={route.key} />;
     });
 
   const dashboardShell =
-    layout === "dashboard" ? (
-      <>
-        <Sidenav
-          color={sidenavColor}
-          brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
-          brandName="Administrimi — Spitali"
-          routes={routes}
-          onMouseEnter={handleOnMouseEnter}
-          onMouseLeave={handleOnMouseLeave}
-        />
-      </>
+    layout === "dashboard" && auth?.token ? (
+      <Sidenav
+        color={sidenavColor}
+        brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
+        brandName={sidenavTitle(auth.role)}
+        routes={routesForRole(auth.role)}
+        onMouseEnter={handleOnMouseEnter}
+        onMouseLeave={handleOnMouseLeave}
+      />
     ) : null;
 
   const appRoutes = (
@@ -138,24 +160,24 @@ export default function App() {
         <Route path="appointment" element={<Appointment />} />
         <Route path="contact" element={<Contact />} />
       </Route>
-      {getRoutes(routes)}
+      {getRoutes(allAppRoutes())}
       <Route path="*" element={<Navigate to="/" replace />} />
+    </>
+  );
+
+  const tree = (
+    <>
+      <CssBaseline />
+      {dashboardShell}
+      <Routes>{appRoutes}</Routes>
     </>
   );
 
   return direction === "rtl" ? (
     <CacheProvider value={rtlCache}>
-      <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
-        <CssBaseline />
-        {dashboardShell}
-        <Routes>{appRoutes}</Routes>
-      </ThemeProvider>
+      <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>{tree}</ThemeProvider>
     </CacheProvider>
   ) : (
-    <ThemeProvider theme={darkMode ? themeDark : theme}>
-      <CssBaseline />
-      {dashboardShell}
-      <Routes>{appRoutes}</Routes>
-    </ThemeProvider>
+    <ThemeProvider theme={darkMode ? themeDark : theme}>{tree}</ThemeProvider>
   );
 }

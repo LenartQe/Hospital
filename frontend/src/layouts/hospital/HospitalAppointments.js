@@ -64,7 +64,7 @@ export default function HospitalAppointments() {
                 coloredShadow="primary"
               >
                 <MDTypography variant="h6" color="white">
-                  Takimet
+                  Terminet
                 </MDTypography>
               </MDBox>
               <MDBox pt={3} px={2} pb={2}>

@@ -32,8 +32,20 @@ export default function PublicLayout() {
               </div>
               <div className="col-lg-6">
                 <div className="text-lg-right top-right-bar mt-2 mt-lg-0">
-                  <NavLink to="/authentication/sign-in" className="btn btn-sm btn-main mr-2">
-                    Administrimi
+                  <NavLink
+                    to="/authentication/sign-in?role=patient"
+                    className="btn btn-sm btn-light mr-1"
+                  >
+                    Pacient
+                  </NavLink>
+                  <NavLink
+                    to="/authentication/sign-in?role=doctor"
+                    className="btn btn-sm btn-light mr-1"
+                  >
+                    Mjek
+                  </NavLink>
+                  <NavLink to="/authentication/sign-in?role=admin" className="btn btn-sm btn-main mr-2">
+                    Administrim
                   </NavLink>
                   <a href={`tel:${CONTACT_PHONE_TEL.replace(/\s/g, "")}`}>
                     <span>Telefoni: </span>
@@ -90,7 +102,7 @@ export default function PublicLayout() {
                 </li>
                 <li className="nav-item">
                   <NavLink className="nav-link" to="/appointment" onClick={() => setOpen(false)}>
-                    Takimi
+                    Terminet
                   </NavLink>
                 </li>
                 <li className="nav-item">
@@ -118,7 +130,7 @@ export default function PublicLayout() {
                 </div>
                 <p>
                   Spitali i Prizrenit — menaxhim ditor i departamenteve, stafit, barnatorës dhe
-                  takimeve me pacientët.
+                  termineve me pacientët.
                 </p>
               </div>
             </div>
@@ -134,7 +146,7 @@ export default function PublicLayout() {
                     <NavLink to="/doctors">Mjekët</NavLink>
                   </li>
                   <li>
-                    <NavLink to="/appointment">Takimi</NavLink>
+                    <NavLink to="/appointment">Terminet</NavLink>
                   </li>
                 </ul>
               </div>

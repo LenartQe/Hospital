@@ -1,10 +1,14 @@
-// Empty base uses the CRA dev-server proxy (package.json) to Spring Boot (see server.port, e.g. :8082).
-// Set REACT_APP_API_URL when the API is not proxied (e.g. production static hosting).
+import { getAuthHeader } from "auth/authStorage";
+
 const API_BASE = process.env.REACT_APP_API_URL || "";
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...options.headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+      ...options.headers,
+    },
     ...options,
   });
   if (!res.ok) {
@@ -16,6 +20,29 @@ async function request(path, options = {}) {
 }
 
 export const hospitalApi = {
+  auth: {
+    login: (body) =>
+      request("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
+    registerPatient: (body) =>
+      request("/api/auth/register/patient", { method: "POST", body: JSON.stringify(body) }),
+  },
+  patient: {
+    dashboard: () => request("/api/patient/dashboard"),
+  },
+  doctor: {
+    dashboard: () => request("/api/doctor/dashboard"),
+    patients: () => request("/api/doctor/patients"),
+    addDiagnosis: (patientId, body) =>
+      request(`/api/doctor/patients/${patientId}/diagnoses`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    addPrescription: (patientId, body) =>
+      request(`/api/doctor/patients/${patientId}/prescriptions`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+  },
   stats: () => request("/api/stats"),
   departments: {
     list: () => request("/api/departments"),

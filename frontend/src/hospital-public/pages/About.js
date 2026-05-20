@@ -10,7 +10,7 @@ export default function About() {
             </div>
             <p className="lead">
               Spitali i Prizrenit bashkon faqen publike me panelin e administrimit për stafin.
-              Departamentet, mjekët, barnat dhe radhët e takimeve menaxhohen në kohë reale; pacientët
+              Departamentet, mjekët, barnat dhe radhët e termineve menaxhohen në kohë reale; pacientët
               shfletojnë shërbimet dhe rezervojnë vizita në internet.
             </p>
           </div>

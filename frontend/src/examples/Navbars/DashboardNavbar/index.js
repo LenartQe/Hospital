@@ -16,7 +16,8 @@ Coded by www.creative-tim.com
 import { useState, useEffect } from "react";
 
 // react-router components
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { clearAuth, getAuth } from "auth/authStorage";
 
 // prop-types is a library for typechecking of props.
 import PropTypes from "prop-types";
@@ -31,6 +32,7 @@ import Icon from "@mui/material/Icon";
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDInput from "components/MDInput";
+import MDTypography from "components/MDTypography";
 
 // Material Dashboard 2 React example components
 import Breadcrumbs from "examples/Breadcrumbs";
@@ -49,6 +51,13 @@ import {
 import { useMaterialUIController, setTransparentNavbar, setMiniSidenav } from "context";
 
 function DashboardNavbar({ absolute, light, isMini }) {
+  const navigate = useNavigate();
+  const auth = getAuth();
+
+  const handleLogout = () => {
+    clearAuth();
+    navigate("/authentication/sign-in");
+  };
   const [navbarType, setNavbarType] = useState();
   const [controller, dispatch] = useMaterialUIController();
   const { miniSidenav, transparentNavbar, fixedNavbar, darkMode } = controller;
@@ -133,11 +142,20 @@ function DashboardNavbar({ absolute, light, isMini }) {
               <MDInput label="Kërko këtu" />
             </MDBox>
             <MDBox color={light ? "white" : "inherit"}>
-              <Link to="/authentication/sign-in/basic">
-                <IconButton sx={navbarIconButton} size="small" disableRipple>
-                  <Icon sx={iconsStyle}>account_circle</Icon>
-                </IconButton>
-              </Link>
+              {auth ? (
+                <MDTypography variant="caption" mr={1} color="inherit">
+                  {auth.fullName}
+                </MDTypography>
+              ) : null}
+              <IconButton
+                sx={navbarIconButton}
+                size="small"
+                disableRipple
+                onClick={handleLogout}
+                title="Dil"
+              >
+                <Icon sx={iconsStyle}>logout</Icon>
+              </IconButton>
               <IconButton
                 size="small"
                 disableRipple

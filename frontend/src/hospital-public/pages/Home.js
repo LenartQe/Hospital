@@ -13,11 +13,11 @@ export default function Home() {
                 <h1 className="mb-3 mt-3">Partneri juaj i besuar për shëndetin</h1>
                 <p className="mb-4 pr-5">
                   Menaxhim gjithëpërfshirës spitalor: departamente, staf mjekësor, stoku i barnatorës dhe
-                  planifikimi i takimeve — i lidhur me panelin modern të administrimit.
+                  planifikimi i termineve — i lidhur me panelin modern të administrimit.
                 </p>
                 <div className="btn-container">
                   <Link to="/appointment" className="btn btn-main-2 btn-icon btn-round-full">
-                    Rezervo takimin <i className="icofont-simple-right ml-2" />
+                    Rezervo terminin <i className="icofont-simple-right ml-2" />
                   </Link>
                 </div>
               </div>
@@ -35,7 +35,7 @@ export default function Home() {
                     <i className="icofont-surgeon-alt" />
                   </div>
                   <span>Shërbim 24 orë</span>
-                  <h4 className="mb-3">Takimi në internet</h4>
+                  <h4 className="mb-3">Terminet në internet</h4>
                   <p className="mb-4">Kërkoni vizitë te mjeku nga lista jonë e përditësuar.</p>
                   <Link to="/appointment" className="btn btn-main btn-round-full">
                     Rezervo tani

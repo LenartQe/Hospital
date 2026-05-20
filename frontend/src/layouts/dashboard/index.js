@@ -103,7 +103,7 @@ function Dashboard() {
               <ComplexStatisticsCard
                 color="primary"
                 icon="event"
-                title="Takimet"
+                title="Terminet"
                 count={stats != null ? String(stats.appointmentsTotal) : "—"}
                 percentage={{
                   color: "warning",

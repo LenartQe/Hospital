@@ -1,8 +1,6 @@
 /**
-=========================================================
-* Hospital System — admin routes (Material Dashboard shell)
-=========================================================
-*/
+ * Admin hospital management routes (Material Dashboard shell)
+ */
 
 import Dashboard from "layouts/dashboard";
 import Notifications from "layouts/notifications";
@@ -13,10 +11,12 @@ import HospitalDepartments from "layouts/hospital/HospitalDepartments";
 import HospitalDoctors from "layouts/hospital/HospitalDoctors";
 import HospitalMedicines from "layouts/hospital/HospitalMedicines";
 import HospitalAppointments from "layouts/hospital/HospitalAppointments";
+import patientRoutes from "routes/patientRoutes";
+import doctorRoutes from "routes/doctorRoutes";
 
 import Icon from "@mui/material/Icon";
 
-const routes = [
+const adminRoutes = [
   {
     type: "collapse",
     name: "Paneli",
@@ -24,6 +24,7 @@ const routes = [
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/dashboard",
     component: <Dashboard />,
+    roles: ["ADMIN"],
   },
   {
     type: "collapse",
@@ -32,6 +33,7 @@ const routes = [
     icon: <Icon fontSize="small">apartment</Icon>,
     route: "/hospital/departments",
     component: <HospitalDepartments />,
+    roles: ["ADMIN"],
   },
   {
     type: "collapse",
@@ -40,6 +42,7 @@ const routes = [
     icon: <Icon fontSize="small">medical_services</Icon>,
     route: "/hospital/doctors",
     component: <HospitalDoctors />,
+    roles: ["ADMIN"],
   },
   {
     type: "collapse",
@@ -48,14 +51,16 @@ const routes = [
     icon: <Icon fontSize="small">medication</Icon>,
     route: "/hospital/medicines",
     component: <HospitalMedicines />,
+    roles: ["ADMIN"],
   },
   {
     type: "collapse",
-    name: "Takimet",
+    name: "Terminet",
     key: "hospital-appointments",
     icon: <Icon fontSize="small">event</Icon>,
     route: "/hospital/appointments",
     component: <HospitalAppointments />,
+    roles: ["ADMIN"],
   },
   {
     type: "collapse",
@@ -64,6 +69,7 @@ const routes = [
     icon: <Icon fontSize="small">notifications</Icon>,
     route: "/notifications",
     component: <Notifications />,
+    roles: ["ADMIN"],
   },
   {
     type: "collapse",
@@ -72,6 +78,7 @@ const routes = [
     icon: <Icon fontSize="small">person</Icon>,
     route: "/profile",
     component: <Profile />,
+    roles: ["ADMIN"],
   },
   {
     type: "collapse",
@@ -80,6 +87,8 @@ const routes = [
     icon: <Icon fontSize="small">login</Icon>,
     route: "/authentication/sign-in",
     component: <SignIn />,
+    hideFromSidenav: true,
+    public: true,
   },
   {
     type: "collapse",
@@ -89,7 +98,18 @@ const routes = [
     route: "/authentication/sign-up",
     component: <SignUp />,
     hideFromSidenav: true,
+    public: true,
   },
 ];
 
-export default routes;
+export function routesForRole(role) {
+  if (role === "PATIENT") return patientRoutes;
+  if (role === "DOCTOR") return doctorRoutes;
+  return adminRoutes.filter((r) => !r.public);
+}
+
+export function allAppRoutes() {
+  return [...adminRoutes, ...patientRoutes, ...doctorRoutes];
+}
+
+export default adminRoutes;
