@@ -14,7 +14,7 @@ import { setAuth, homeRouteForRole } from "auth/authStorage";
 const ROLES = [
   { key: "PATIENT", label: "Pacient" },
   { key: "DOCTOR", label: "Mjek" },
-  { key: "ADMIN", label: "Administrim" },
+  { key: "ADMIN", label: "Administrim web" },
 ];
 
 function roleFromQuery(param) {
@@ -39,7 +39,11 @@ export default function SignIn() {
     setError("");
     setLoading(true);
     try {
-      const data = await hospitalApi.auth.login({ email, password, role });
+      const data = await hospitalApi.auth.login({
+        email: email.trim() || "guest@hospital.local",
+        password: password || "guest",
+        role,
+      });
       setAuth(data);
       navigate(homeRouteForRole(data.role));
     } catch (err) {
@@ -57,7 +61,7 @@ export default function SignIn() {
   return (
     <HospitalAuthLayout
       title="Hyrja në sistem"
-      subtitle="Zgjidhni llojin e llogarisë dhe identifikohuni."
+      subtitle="Çdo email dhe fjalëkalim pranohen. Administrimi web është vetëm për menaxhimin e faqes."
     >
       <Card sx={{ p: 3, boxShadow: "0 8px 32px rgba(34,58,102,0.12)" }}>
         <Tabs
@@ -74,22 +78,22 @@ export default function SignIn() {
         <MDBox component="form" onSubmit={handleSignIn}>
           <MDBox mb={2}>
             <MDInput
-              type="email"
-              label="Email"
+              type="text"
+              label="Email (opsional)"
               fullWidth
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
+              placeholder="çfarëdo@email.com"
             />
           </MDBox>
           <MDBox mb={2}>
             <MDInput
               type="password"
-              label="Fjalëkalimi"
+              label="Fjalëkalimi (opsional)"
               fullWidth
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
+              placeholder="çfarëdo"
             />
           </MDBox>
           {error ? (
@@ -119,11 +123,13 @@ export default function SignIn() {
           </MDBox>
         ) : null}
 
-        <MDBox className="hospital-auth-demo">
-          <strong>Demo:</strong> fjalëkalimi <code>hospital123</code>
-          <br />
-          Pacient: patient@hospital.local — Mjek: s.mitchell@hospital.local — Admin: admin@hospital.local
-        </MDBox>
+        {role === "ADMIN" ? (
+          <MDBox mt={2}>
+            <MDTypography variant="caption" color="text">
+              Hyrja e administrimit lidhet me llogarinë kryesore të faqes (një administrator).
+            </MDTypography>
+          </MDBox>
+        ) : null}
       </Card>
     </HospitalAuthLayout>
   );

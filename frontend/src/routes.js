@@ -19,7 +19,7 @@ import Icon from "@mui/material/Icon";
 const adminRoutes = [
   {
     type: "collapse",
-    name: "Paneli",
+    name: "Paneli web",
     key: "dashboard",
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/dashboard",

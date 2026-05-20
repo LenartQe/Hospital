@@ -6,6 +6,9 @@ import {
   CONTACT_PHONE_DISPLAY,
   CONTACT_PHONE_TEL,
 } from "./contactInfo";
+import "./hospital-site.css";
+
+const telHref = `tel:${CONTACT_PHONE_TEL}`;
 
 export default function PublicLayout() {
   const [open, setOpen] = useState(false);
@@ -44,12 +47,15 @@ export default function PublicLayout() {
                   >
                     Mjek
                   </NavLink>
-                  <NavLink to="/authentication/sign-in?role=admin" className="btn btn-sm btn-main mr-2">
+                  <NavLink
+                    to="/authentication/sign-in?role=admin"
+                    className="btn btn-sm btn-main mr-2"
+                  >
                     Administrim
                   </NavLink>
-                  <a href={`tel:${CONTACT_PHONE_TEL.replace(/\s/g, "")}`}>
-                    <span>Telefoni: </span>
-                    <span className="h4">{CONTACT_PHONE_DISPLAY}</span>
+                  <span className="hospital-phone-label">Telefoni:</span>
+                  <a href={telHref} className="hospital-phone-link">
+                    {CONTACT_PHONE_DISPLAY}
                   </a>
                 </div>
               </div>
@@ -159,7 +165,9 @@ export default function PublicLayout() {
                   <a href={CONTACT_EMAIL_MAILTO}>{CONTACT_EMAIL}</a>
                 </p>
                 <p>
-                  <a href={`tel:${CONTACT_PHONE_TEL.replace(/\s/g, "")}`}>{CONTACT_PHONE_DISPLAY}</a>
+                  <a href={telHref} className="hospital-phone-link">
+                    {CONTACT_PHONE_DISPLAY}
+                  </a>
                 </p>
               </div>
             </div>

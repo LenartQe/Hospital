@@ -4,9 +4,10 @@ import {
   CONTACT_PHONE_DISPLAY,
   CONTACT_PHONE_TEL,
 } from "../contactInfo";
+import "../hospital-site.css";
 
 export default function Contact() {
-  const telHref = `tel:${CONTACT_PHONE_TEL.replace(/\s/g, "")}`;
+  const telHref = `tel:${CONTACT_PHONE_TEL}`;
   return (
     <section className="section contact">
       <div className="container">
@@ -16,18 +17,22 @@ export default function Contact() {
               <h2 className="text-md text-uppercase letter-spacing mb-1">Kontakti</h2>
               <div className="divider mx-auto mb-4" />
             </div>
-            <p>Për emergjenca mjekësore telefononi shërbimin e emergjencës. Për pyetje të përgjithshme:</p>
             <p>
-              <strong>Email:</strong>{" "}
-              <a href={CONTACT_EMAIL_MAILTO}>{CONTACT_EMAIL}</a>
+              Për emergjenca mjekësore telefononi shërbimin e emergjencës. Për pyetje të
+              përgjithshme:
+            </p>
+            <p>
+              <strong>Email:</strong> <a href={CONTACT_EMAIL_MAILTO}>{CONTACT_EMAIL}</a>
             </p>
             <p>
               <strong>Telefoni:</strong>{" "}
-              <a href={telHref}>{CONTACT_PHONE_DISPLAY}</a>
+              <a href={telHref} className="hospital-phone-link">
+                {CONTACT_PHONE_DISPLAY}
+              </a>
             </p>
             <p>
-              <strong>Adresa:</strong> Prizren, Kosovë — për lokacionet brenda spitalit shihni faqet e
-              departamenteve.
+              <strong>Adresa:</strong> Prizren, Kosovë — për lokacionet brenda spitalit shihni faqet
+              e departamenteve.
             </p>
           </div>
         </div>

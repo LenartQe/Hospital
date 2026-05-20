@@ -17,9 +17,7 @@ export default function Departments() {
     return (
       <section className="section">
         <div className="container">
-          <p className="text-danger">
-            Nuk u ngarkuan departamentet. A është API aktiv? ({err})
-          </p>
+          <p className="text-danger">Nuk u ngarkuan departamentet. A është API aktiv? ({err})</p>
         </div>
       </section>
     );

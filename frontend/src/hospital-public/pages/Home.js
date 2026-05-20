@@ -9,11 +9,14 @@ export default function Home() {
             <div className="col-lg-6 col-md-12 col-xl-7">
               <div className="block">
                 <div className="divider mb-3" />
-                <span className="text-uppercase text-sm letter-spacing">Kujdes shëndetësor i plotë</span>
+                <span className="text-uppercase text-sm letter-spacing">
+                  Kujdes shëndetësor i plotë
+                </span>
                 <h1 className="mb-3 mt-3">Partneri juaj i besuar për shëndetin</h1>
                 <p className="mb-4 pr-5">
-                  Menaxhim gjithëpërfshirës spitalor: departamente, staf mjekësor, stoku i barnatorës dhe
-                  planifikimi i termineve — i lidhur me panelin modern të administrimit.
+                  Menaxhim gjithëpërfshirës spitalor: departamente, staf mjekësor, stoku i
+                  barnatorës dhe planifikimi i termineve — i lidhur me panelin modern të
+                  administrimit.
                 </p>
                 <div className="btn-container">
                   <Link to="/appointment" className="btn btn-main-2 btn-icon btn-round-full">

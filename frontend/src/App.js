@@ -37,6 +37,7 @@ import Appointment from "hospital-public/pages/Appointment";
 import Contact from "hospital-public/pages/Contact";
 
 import "hospital-public/hospital-auth.css";
+import "hospital-public/hospital-site.css";
 
 function isPublicRoute(pathname) {
   if (pathname === "/") return true;
@@ -65,7 +66,7 @@ function resolveLayout(pathname) {
 function sidenavTitle(role) {
   if (role === "PATIENT") return "Pacient — Spitali";
   if (role === "DOCTOR") return "Mjek — Spitali";
-  return "Administrimi — Spitali";
+  return "Administrim web — Spitali";
 }
 
 export default function App() {

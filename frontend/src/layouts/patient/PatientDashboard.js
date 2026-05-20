@@ -37,9 +37,7 @@ export default function PatientDashboard() {
         <MDTypography variant="h4" fontWeight="bold" mb={2}>
           Paneli i pacientit
         </MDTypography>
-        {error ? (
-          <MDTypography color="error">{error}</MDTypography>
-        ) : null}
+        {error ? <MDTypography color="error">{error}</MDTypography> : null}
         {data ? (
           <Grid container spacing={3}>
             <Grid item xs={12} md={4}>

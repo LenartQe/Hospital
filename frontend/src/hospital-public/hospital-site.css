@@ -1,0 +1,24 @@
+.hospital-phone-link {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  color: inherit;
+  margin-left: 0.5rem;
+}
+
+.hospital-phone-link:hover {
+  text-decoration: underline;
+}
+
+.top-right-bar .hospital-phone-link {
+  vertical-align: middle;
+}
+
+.top-right-bar .hospital-phone-label {
+  white-space: nowrap;
+  font-size: 0.9rem;
+}

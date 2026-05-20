@@ -21,8 +21,7 @@ async function request(path, options = {}) {
 
 export const hospitalApi = {
   auth: {
-    login: (body) =>
-      request("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
+    login: (body) => request("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
     registerPatient: (body) =>
       request("/api/auth/register/patient", { method: "POST", body: JSON.stringify(body) }),
   },
@@ -31,6 +30,15 @@ export const hospitalApi = {
   },
   doctor: {
     dashboard: () => request("/api/doctor/dashboard"),
+    appointments: () => request("/api/doctor/appointments"),
+    updateAppointmentStatus: (id, status) =>
+      request(`/api/doctor/appointments/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      }),
+    diagnoses: () => request("/api/doctor/diagnoses"),
+    prescriptions: () => request("/api/doctor/prescriptions"),
+    profile: () => request("/api/doctor/profile"),
     patients: () => request("/api/doctor/patients"),
     addDiagnosis: (patientId, body) =>
       request(`/api/doctor/patients/${patientId}/diagnoses`, {
