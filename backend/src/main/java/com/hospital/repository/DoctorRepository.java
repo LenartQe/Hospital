@@ -9,4 +9,6 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
   List<Doctor> findByDepartmentId(Long departmentId);
 
   Optional<Doctor> findByUserId(Long userId);
+
+  Optional<Doctor> findByEmail(String email);
 }

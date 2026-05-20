@@ -14,6 +14,7 @@ import com.hospital.repository.MedicineRepository;
 import com.hospital.repository.PatientProfileRepository;
 import com.hospital.repository.PrescriptionRepository;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -80,11 +81,60 @@ public class PortalService {
 
   public Map<String, Object> doctorDashboard(Long userId) {
     Doctor doctor = requireDoctorByUserId(userId);
-    List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctor.getId());
-    return Map.of(
-        "doctor", doctor,
-        "appointments", appointments,
-        "appointmentCount", appointments.size());
+    Long doctorId = doctor.getId();
+    List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId);
+    long pending =
+        appointments.stream().filter(a -> "PENDING".equalsIgnoreCase(a.getStatus())).count();
+    long confirmed =
+        appointments.stream().filter(a -> "CONFIRMED".equalsIgnoreCase(a.getStatus())).count();
+    List<Diagnosis> diagnoses = diagnosisRepository.findByDoctorIdOrderByDiagnosedAtDesc(doctorId);
+    List<Prescription> prescriptions = prescriptionRepository.findByDoctorIdOrderByPrescribedAtDesc(doctorId);
+    long patientCount = patientProfileRepository.count();
+
+    Map<String, Object> result = new HashMap<>();
+    result.put("doctor", doctor);
+    result.put("appointments", appointments);
+    result.put("appointmentCount", appointments.size());
+    result.put("pendingAppointments", pending);
+    result.put("confirmedAppointments", confirmed);
+    result.put("diagnosisCount", diagnoses.size());
+    result.put("prescriptionCount", prescriptions.size());
+    result.put("patientCount", patientCount);
+    result.put("recentDiagnoses", diagnoses.stream().limit(5).toList());
+    result.put("recentPrescriptions", prescriptions.stream().limit(5).toList());
+    return result;
+  }
+
+  public List<Appointment> doctorAppointments(Long userId) {
+    Doctor doctor = requireDoctorByUserId(userId);
+    return appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctor.getId());
+  }
+
+  public Appointment updateAppointmentStatus(Long userId, Long appointmentId, String status) {
+    Doctor doctor = requireDoctorByUserId(userId);
+    Appointment appointment =
+        appointmentRepository
+            .findById(appointmentId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Termini nuk u gjet."));
+    if (appointment.getDoctor() == null || !appointment.getDoctor().getId().equals(doctor.getId())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ky termin nuk i përket këtij mjeku.");
+    }
+    appointment.setStatus(status);
+    return appointmentRepository.save(appointment);
+  }
+
+  public List<Diagnosis> doctorDiagnoses(Long userId) {
+    Doctor doctor = requireDoctorByUserId(userId);
+    return diagnosisRepository.findByDoctorIdOrderByDiagnosedAtDesc(doctor.getId());
+  }
+
+  public List<Prescription> doctorPrescriptions(Long userId) {
+    Doctor doctor = requireDoctorByUserId(userId);
+    return prescriptionRepository.findByDoctorIdOrderByPrescribedAtDesc(doctor.getId());
+  }
+
+  public Doctor doctorProfile(Long userId) {
+    return requireDoctorByUserId(userId);
   }
 
   public List<PatientProfile> listPatientsForDoctor() {
