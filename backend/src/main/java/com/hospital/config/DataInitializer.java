@@ -8,9 +8,11 @@ import com.hospital.repository.DoctorRepository;
 import com.hospital.repository.MedicineRepository;
 import java.math.BigDecimal;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Component
+@Order(1)
 public class DataInitializer implements CommandLineRunner {
 
   private final DepartmentRepository departmentRepository;

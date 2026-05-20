@@ -43,6 +43,9 @@ public class Doctor {
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private Department department;
 
+  @Column(name = "user_id", unique = true)
+  private Long userId;
+
   @Column(name = "created_at")
   private Instant createdAt = Instant.now();
 
@@ -108,6 +111,14 @@ public class Doctor {
 
   public void setDepartment(Department department) {
     this.department = department;
+  }
+
+  public Long getUserId() {
+    return userId;
+  }
+
+  public void setUserId(Long userId) {
+    this.userId = userId;
   }
 
   public Instant getCreatedAt() {

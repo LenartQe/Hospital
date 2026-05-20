@@ -39,6 +39,9 @@ public class Appointment {
   @Column(length = 50)
   private String status = "PENDING";
 
+  @Column(name = "patient_profile_id")
+  private Long patientProfileId;
+
   @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "doctor_id")
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -101,6 +104,14 @@ public class Appointment {
 
   public void setStatus(String status) {
     this.status = status;
+  }
+
+  public Long getPatientProfileId() {
+    return patientProfileId;
+  }
+
+  public void setPatientProfileId(Long patientProfileId) {
+    this.patientProfileId = patientProfileId;
   }
 
   public Doctor getDoctor() {
