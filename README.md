@@ -1,12 +1,12 @@
 # Hospital Management System — Spitali i Prizrenit
 
-Full-stack hospital management: public website, admin panel, **patient portal**, and **doctor portal**.
+Full-stack hospital management system
 
 ## Tech stack
 
-- **Frontend:** React (Material Dashboard) — `frontend/`
-- **Backend:** Spring Boot — `backend/`
-- **Database:** MySQL (`hospital_system`)
+- **Frontend:** React (Material Dashboard) 
+- **Backend:** Spring Boot 
+- **Database:** MySQL 
 
 
 ## Team
