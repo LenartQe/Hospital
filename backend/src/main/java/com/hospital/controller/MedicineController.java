@@ -2,6 +2,7 @@ package com.hospital.controller;
 
 import com.hospital.entity.Medicine;
 import com.hospital.repository.MedicineRepository;
+import com.hospital.service.AdminDeleteService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,9 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class MedicineController {
 
   private final MedicineRepository repository;
+  private final AdminDeleteService adminDeleteService;
 
-  public MedicineController(MedicineRepository repository) {
+  public MedicineController(MedicineRepository repository, AdminDeleteService adminDeleteService) {
     this.repository = repository;
+    this.adminDeleteService = adminDeleteService;
   }
 
   @GetMapping
@@ -57,7 +60,7 @@ public class MedicineController {
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable Long id) {
-    repository.deleteById(id);
+    adminDeleteService.deleteMedicine(id);
   }
 
   private static void apply(MedicineRequest body, Medicine m) {

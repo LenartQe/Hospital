@@ -4,6 +4,7 @@ import com.hospital.entity.Department;
 import com.hospital.entity.Doctor;
 import com.hospital.repository.DepartmentRepository;
 import com.hospital.repository.DoctorRepository;
+import com.hospital.service.AdminDeleteService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,10 +27,15 @@ public class DoctorController {
 
   private final DoctorRepository doctorRepository;
   private final DepartmentRepository departmentRepository;
+  private final AdminDeleteService adminDeleteService;
 
-  public DoctorController(DoctorRepository doctorRepository, DepartmentRepository departmentRepository) {
+  public DoctorController(
+      DoctorRepository doctorRepository,
+      DepartmentRepository departmentRepository,
+      AdminDeleteService adminDeleteService) {
     this.doctorRepository = doctorRepository;
     this.departmentRepository = departmentRepository;
+    this.adminDeleteService = adminDeleteService;
   }
 
   @GetMapping
@@ -64,7 +70,7 @@ public class DoctorController {
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable Long id) {
-    doctorRepository.deleteById(id);
+    adminDeleteService.deleteDoctor(id);
   }
 
   private void apply(DoctorRequest body, Doctor d) {
