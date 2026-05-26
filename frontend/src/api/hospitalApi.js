@@ -5,18 +5,32 @@ const API_BASE = process.env.REACT_APP_API_URL || "";
 /** Extract a readable message from API error responses (JSON or plain text). */
 export function parseApiError(err) {
   const raw = err?.message || String(err);
+  let parsed = null;
   try {
-    const parsed = JSON.parse(raw);
-    if (parsed.message) return parsed.message;
-    if (parsed.error) return parsed.error;
+    parsed = JSON.parse(raw);
   } catch {
-    // not JSON — try Spring Boot default error shape embedded in string
+    // not JSON
+  }
+  if (parsed) {
+    if (parsed.message) return parsed.message;
+    if (parsed.error && parsed.error !== "Internal Server Error") return parsed.error;
+    if (parsed.status === 403) return "Nuk keni akses. Hyni si administrator.";
+    if (parsed.status === 401) return "Sesioni skadoi. Hyni përsëri.";
+    if (parsed.status === 500) {
+      return "Gabim në server. Rinisni backend-in dhe provoni përsëri.";
+    }
   }
   if (raw.includes('"message"')) {
     const match = raw.match(/"message"\s*:\s*"([^"]+)"/);
     if (match) return match[1];
   }
-  return raw.length > 200 ? "Gabim në server. Kontrolloni që API është aktiv." : raw;
+  if (raw === "Internal Server Error" || raw.includes("Internal Server Error")) {
+    return "Gabim në server. Rinisni backend-in (port 8082) dhe provoni përsëri.";
+  }
+  if (raw.length > 300) {
+    return "Gabim në server. Kontrolloni që API është aktiv dhe jeni të kyçur si admin.";
+  }
+  return raw;
 }
 
 async function request(path, options = {}) {
@@ -33,7 +47,11 @@ async function request(path, options = {}) {
     throw new Error(text || res.statusText);
   }
   if (res.status === 204) return null;
-  return res.json();
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return res.json();
+  }
+  return null;
 }
 
 export const hospitalApi = {

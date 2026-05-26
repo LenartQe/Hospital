@@ -15,7 +15,7 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import { hospitalApi } from "api/hospitalApi";
+import { hospitalApi, parseApiError } from "api/hospitalApi";
 
 const STATUSES = ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"];
 const STATUS_LABEL = {
@@ -33,7 +33,7 @@ export default function HospitalAppointments() {
     hospitalApi.appointments
       .list()
       .then(setRows)
-      .catch((e) => setError(String(e.message)));
+      .catch((e) => setError(parseApiError(e)));
 
   useEffect(() => {
     load();
@@ -43,7 +43,7 @@ export default function HospitalAppointments() {
     hospitalApi.appointments
       .updateStatus(id, status)
       .then(load)
-      .catch((e) => setError(String(e.message)));
+      .catch((e) => setError(parseApiError(e)));
   };
 
   return (

@@ -22,7 +22,7 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import { hospitalApi } from "api/hospitalApi";
+import { hospitalApi, parseApiError } from "api/hospitalApi";
 
 const empty = {
   fullName: "",
@@ -46,7 +46,7 @@ export default function HospitalDoctors() {
     hospitalApi.doctors
       .list()
       .then(setRows)
-      .catch((e) => setError(String(e.message)));
+      .catch((e) => setError(parseApiError(e)));
 
   useEffect(() => {
     hospitalApi.departments
@@ -99,15 +99,23 @@ export default function HospitalDoctors() {
     p.then(() => {
       setOpen(false);
       load();
-    }).catch((e) => setError(String(e.message)));
+    }).catch((e) => setError(parseApiError(e)));
   };
 
   const remove = (id) => {
-    if (!window.confirm("Të fshihet ky mjek?")) return;
+    if (
+      !window.confirm(
+        "Të fshihet ky mjek? Terminet, diagnozat dhe recetat e lidhura do të fshihen gjithashtu."
+      )
+    )
+      return;
     hospitalApi.doctors
       .remove(id)
-      .then(load)
-      .catch((e) => setError(String(e.message)));
+      .then(() => {
+        setError("");
+        load();
+      })
+      .catch((e) => setError(parseApiError(e)));
   };
 
   return (

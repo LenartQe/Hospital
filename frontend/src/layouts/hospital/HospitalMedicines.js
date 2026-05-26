@@ -21,7 +21,7 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import { hospitalApi } from "api/hospitalApi";
+import { hospitalApi, parseApiError } from "api/hospitalApi";
 
 const empty = {
   name: "",
@@ -44,7 +44,7 @@ export default function HospitalMedicines() {
     hospitalApi.medicines
       .list()
       .then(setRows)
-      .catch((e) => setError(String(e.message)));
+      .catch((e) => setError(parseApiError(e)));
 
   useEffect(() => {
     load();
@@ -86,15 +86,18 @@ export default function HospitalMedicines() {
     p.then(() => {
       setOpen(false);
       load();
-    }).catch((e) => setError(String(e.message)));
+    }).catch((e) => setError(parseApiError(e)));
   };
 
   const remove = (id) => {
-    if (!window.confirm("Të fshihet ky ilaç?")) return;
+    if (!window.confirm("Të fshihet kjo bar? Recetat e lidhura do të fshihen gjithashtu.")) return;
     hospitalApi.medicines
       .remove(id)
-      .then(load)
-      .catch((e) => setError(String(e.message)));
+      .then(() => {
+        setError("");
+        load();
+      })
+      .catch((e) => setError(parseApiError(e)));
   };
 
   return (
