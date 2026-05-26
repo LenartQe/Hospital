@@ -39,7 +39,7 @@ public class Doctor {
   private String imageUrl;
 
   @ManyToOne(fetch = FetchType.EAGER)
-  @JoinColumn(name = "department_id")
+  @JoinColumn(name = "department_id", nullable = true)
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
   private Department department;
 

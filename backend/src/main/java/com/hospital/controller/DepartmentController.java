@@ -2,6 +2,7 @@ package com.hospital.controller;
 
 import com.hospital.entity.Department;
 import com.hospital.repository.DepartmentRepository;
+import com.hospital.service.DepartmentService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
@@ -21,9 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class DepartmentController {
 
   private final DepartmentRepository repository;
+  private final DepartmentService departmentService;
 
-  public DepartmentController(DepartmentRepository repository) {
+  public DepartmentController(DepartmentRepository repository, DepartmentService departmentService) {
     this.repository = repository;
+    this.departmentService = departmentService;
   }
 
   @GetMapping
@@ -55,7 +58,7 @@ public class DepartmentController {
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable Long id) {
-    repository.deleteById(id);
+    departmentService.deleteById(id);
   }
 
   private static void apply(DepartmentRequest body, Department d) {
