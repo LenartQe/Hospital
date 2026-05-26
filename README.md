@@ -4,7 +4,7 @@ Full-stack hospital management system
 
 ## Tech stack
 
-- **Frontend:** React (Material Dashboard) 
+- **Frontend:** ReactJs
 - **Backend:** Spring Boot 
 - **Database:** MySQL 
 
