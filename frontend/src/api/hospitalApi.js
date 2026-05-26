@@ -2,6 +2,23 @@ import { getAuthHeader } from "auth/authStorage";
 
 const API_BASE = process.env.REACT_APP_API_URL || "";
 
+/** Extract a readable message from API error responses (JSON or plain text). */
+export function parseApiError(err) {
+  const raw = err?.message || String(err);
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed.message) return parsed.message;
+    if (parsed.error) return parsed.error;
+  } catch {
+    // not JSON — try Spring Boot default error shape embedded in string
+  }
+  if (raw.includes('"message"')) {
+    const match = raw.match(/"message"\s*:\s*"([^"]+)"/);
+    if (match) return match[1];
+  }
+  return raw.length > 200 ? "Gabim në server. Kontrolloni që API është aktiv." : raw;
+}
+
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: {

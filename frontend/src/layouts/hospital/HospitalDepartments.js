@@ -21,7 +21,7 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import { hospitalApi } from "api/hospitalApi";
+import { hospitalApi, parseApiError } from "api/hospitalApi";
 
 const empty = { name: "", description: "", location: "", headDoctorName: "" };
 
@@ -36,7 +36,7 @@ export default function HospitalDepartments() {
     hospitalApi.departments
       .list()
       .then(setRows)
-      .catch((e) => setError(String(e.message)));
+      .catch((e) => setError(parseApiError(e)));
 
   useEffect(() => {
     load();
@@ -72,15 +72,18 @@ export default function HospitalDepartments() {
     p.then(() => {
       setOpen(false);
       load();
-    }).catch((e) => setError(String(e.message)));
+    }).catch((e) => setError(parseApiError(e)));
   };
 
   const remove = (id) => {
-    if (!window.confirm("Të fshihet ky departament?")) return;
+    if (!window.confirm("Të fshihet ky departament? Mjekët e lidhur do të shkëputen nga ky departament.")) return;
     hospitalApi.departments
       .remove(id)
-      .then(load)
-      .catch((e) => setError(String(e.message)));
+      .then(() => {
+        setError("");
+        load();
+      })
+      .catch((e) => setError(parseApiError(e)));
   };
 
   return (
