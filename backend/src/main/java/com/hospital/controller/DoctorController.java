@@ -5,6 +5,7 @@ import com.hospital.entity.Doctor;
 import com.hospital.repository.DepartmentRepository;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.service.AdminDeleteService;
+import com.hospital.util.Require;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -41,14 +42,17 @@ public class DoctorController {
   @GetMapping
   public List<Doctor> list(@RequestParam(required = false) Long departmentId) {
     if (departmentId != null) {
-      return doctorRepository.findByDepartmentId(departmentId);
+      return doctorRepository.findByDepartmentId(Require.id(departmentId, "ID e departamentit"));
     }
     return doctorRepository.findAll();
   }
 
   @GetMapping("/{id}")
   public Doctor get(@PathVariable Long id) {
-    return doctorRepository.findById(id).orElseThrow(() -> new NotFoundException("Doctor not found"));
+    long doctorId = Require.id(id, "ID e mjekut");
+    return doctorRepository
+        .findById(doctorId)
+        .orElseThrow(() -> new NotFoundException("Doctor not found"));
   }
 
   @PostMapping
@@ -61,8 +65,11 @@ public class DoctorController {
 
   @PutMapping("/{id}")
   public Doctor update(@PathVariable Long id, @Valid @RequestBody DoctorRequest body) {
+    long doctorId = Require.id(id, "ID e mjekut");
     Doctor d =
-        doctorRepository.findById(id).orElseThrow(() -> new NotFoundException("Doctor not found"));
+        doctorRepository
+            .findById(doctorId)
+            .orElseThrow(() -> new NotFoundException("Doctor not found"));
     apply(body, d);
     return doctorRepository.save(d);
   }
@@ -74,15 +81,16 @@ public class DoctorController {
   }
 
   private void apply(DoctorRequest body, Doctor d) {
-    d.setFullName(body.fullName());
+    d.setFullName(Require.notBlank(body.fullName(), "Emri"));
     d.setEmail(body.email());
     d.setPhone(body.phone());
     d.setSpecialty(body.specialty());
     d.setBio(body.bio());
     d.setImageUrl(body.imageUrl());
+    Long deptId = Require.notNull(body.departmentId(), "ID e departamentit");
     Department dept =
         departmentRepository
-            .findById(body.departmentId())
+            .findById(deptId)
             .orElseThrow(() -> new NotFoundException("Department not found"));
     d.setDepartment(dept);
   }

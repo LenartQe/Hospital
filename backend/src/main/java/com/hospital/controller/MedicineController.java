@@ -3,6 +3,7 @@ package com.hospital.controller;
 import com.hospital.entity.Medicine;
 import com.hospital.repository.MedicineRepository;
 import com.hospital.service.AdminDeleteService;
+import com.hospital.util.Require;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -38,7 +39,10 @@ public class MedicineController {
 
   @GetMapping("/{id}")
   public Medicine get(@PathVariable Long id) {
-    return repository.findById(id).orElseThrow(() -> new NotFoundException("Medicine not found"));
+    long medicineId = Require.id(id, "ID e barnës");
+    return repository
+        .findById(medicineId)
+        .orElseThrow(() -> new NotFoundException("Medicine not found"));
   }
 
   @PostMapping
@@ -51,8 +55,11 @@ public class MedicineController {
 
   @PutMapping("/{id}")
   public Medicine update(@PathVariable Long id, @Valid @RequestBody MedicineRequest body) {
+    long medicineId = Require.id(id, "ID e barnës");
     Medicine m =
-        repository.findById(id).orElseThrow(() -> new NotFoundException("Medicine not found"));
+        repository
+            .findById(medicineId)
+            .orElseThrow(() -> new NotFoundException("Medicine not found"));
     apply(body, m);
     return repository.save(m);
   }
@@ -64,9 +71,9 @@ public class MedicineController {
   }
 
   private static void apply(MedicineRequest body, Medicine m) {
-    m.setName(body.name());
+    m.setName(Require.notBlank(body.name(), "Emri"));
     m.setDescription(body.description());
-    m.setStockQuantity(body.stockQuantity());
+    m.setStockQuantity(Require.notNull(body.stockQuantity(), "Sasia"));
     m.setUnit(body.unit());
     m.setManufacturer(body.manufacturer());
     m.setPrice(body.price());

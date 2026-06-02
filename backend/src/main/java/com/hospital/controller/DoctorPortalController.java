@@ -3,9 +3,9 @@ package com.hospital.controller;
 import com.hospital.entity.Appointment;
 import com.hospital.entity.Diagnosis;
 import com.hospital.entity.Doctor;
-import com.hospital.entity.PatientProfile;
 import com.hospital.entity.Prescription;
 import com.hospital.service.PortalService;
+import com.hospital.util.Require;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -31,26 +31,24 @@ public class DoctorPortalController {
 
   @GetMapping("/dashboard")
   public Map<String, Object> dashboard(Authentication authentication) {
-    Long userId = (Long) authentication.getPrincipal();
-    return portalService.doctorDashboard(userId);
+    return portalService.doctorDashboard(Require.authUserId(authentication));
   }
 
   @GetMapping("/appointments")
   public List<Appointment> appointments(Authentication authentication) {
-    Long userId = (Long) authentication.getPrincipal();
-    return portalService.doctorAppointments(userId);
+    return portalService.doctorAppointments(Require.authUserId(authentication));
   }
 
   @PatchMapping("/appointments/{id}/status")
   public Appointment updateStatus(
       Authentication authentication, @PathVariable Long id, @RequestBody StatusBody body) {
-    Long userId = (Long) authentication.getPrincipal();
-    return portalService.updateAppointmentStatus(userId, id, body.status());
+    return portalService.updateAppointmentStatus(
+        Require.authUserId(authentication), id, body.status());
   }
 
   @GetMapping("/diagnoses")
   public List<DiagnosisView> diagnoses(Authentication authentication) {
-    Long userId = (Long) authentication.getPrincipal();
+    long userId = Require.authUserId(authentication);
     return portalService.doctorDiagnoses(userId).stream()
         .map(
             d ->
@@ -58,7 +56,7 @@ public class DoctorPortalController {
                     d.getId(),
                     d.getTitle(),
                     d.getDescription(),
-                    d.getPatient().getUser().getFullName(),
+                    portalService.patientDisplayName(d.getPatient()),
                     d.getSeverity(),
                     d.getDiagnosedAt()))
         .toList();
@@ -66,35 +64,41 @@ public class DoctorPortalController {
 
   @GetMapping("/prescriptions")
   public List<PrescriptionView> prescriptions(Authentication authentication) {
-    Long userId = (Long) authentication.getPrincipal();
+    long userId = Require.authUserId(authentication);
     return portalService.doctorPrescriptions(userId).stream()
         .map(
-            p ->
-                new PrescriptionView(
-                    p.getId(),
-                    p.getMedicine().getName(),
-                    p.getDosage(),
-                    p.getFrequency(),
-                    p.getPatient().getUser().getFullName(),
-                    p.getStatus(),
-                    p.getPrescribedAt()))
+            p -> {
+              String medicineName =
+                  p.getMedicine() != null && p.getMedicine().getName() != null
+                      ? p.getMedicine().getName()
+                      : "—";
+              return new PrescriptionView(
+                  p.getId(),
+                  medicineName,
+                  p.getDosage(),
+                  p.getFrequency(),
+                  portalService.patientDisplayName(p.getPatient()),
+                  p.getStatus(),
+                  p.getPrescribedAt());
+            })
         .toList();
   }
 
   @GetMapping("/profile")
   public Doctor profile(Authentication authentication) {
-    Long userId = (Long) authentication.getPrincipal();
-    return portalService.doctorProfile(userId);
+    return portalService.doctorProfile(Require.authUserId(authentication));
   }
 
   @GetMapping("/patients")
   public List<PatientSummary> patients() {
     return portalService.listPatientsForDoctor().stream()
         .map(
-            p -> {
-              var u = p.getUser();
-              return new PatientSummary(p.getId(), u.getFullName(), u.getEmail(), u.getPhone());
-            })
+            p ->
+                new PatientSummary(
+                    p.getId(),
+                    portalService.patientDisplayName(p),
+                    p.getUser() != null ? p.getUser().getEmail() : null,
+                    p.getUser() != null ? p.getUser().getPhone() : null))
         .toList();
   }
 
@@ -103,9 +107,12 @@ public class DoctorPortalController {
       Authentication authentication,
       @PathVariable Long patientId,
       @RequestBody DiagnosisRequest body) {
-    Long userId = (Long) authentication.getPrincipal();
     return portalService.createDiagnosis(
-        userId, patientId, body.title(), body.description(), body.severity());
+        Require.authUserId(authentication),
+        patientId,
+        body.title(),
+        body.description(),
+        body.severity());
   }
 
   @PostMapping("/patients/{patientId}/prescriptions")
@@ -113,9 +120,8 @@ public class DoctorPortalController {
       Authentication authentication,
       @PathVariable Long patientId,
       @RequestBody PrescriptionRequest body) {
-    Long userId = (Long) authentication.getPrincipal();
     return portalService.createPrescription(
-        userId,
+        Require.authUserId(authentication),
         patientId,
         body.medicineId(),
         body.dosage(),

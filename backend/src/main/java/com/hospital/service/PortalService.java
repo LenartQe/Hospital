@@ -2,6 +2,7 @@ package com.hospital.service;
 
 import com.hospital.dto.PatientDashboardDto;
 import com.hospital.entity.Appointment;
+import com.hospital.entity.AppUser;
 import com.hospital.entity.Diagnosis;
 import com.hospital.entity.Doctor;
 import com.hospital.entity.Medicine;
@@ -13,6 +14,7 @@ import com.hospital.repository.DoctorRepository;
 import com.hospital.repository.MedicineRepository;
 import com.hospital.repository.PatientProfileRepository;
 import com.hospital.repository.PrescriptionRepository;
+import com.hospital.util.Require;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -47,25 +49,29 @@ public class PortalService {
   }
 
   public PatientProfile requirePatientProfile(Long userId) {
+    long uid = Require.id(userId, "ID e përdoruesit");
     return patientProfileRepository
-        .findByUserId(userId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profili i pacientit nuk u gjet."));
+        .findByUserId(uid)
+        .orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profili i pacientit nuk u gjet."));
   }
 
   public Doctor requireDoctorByUserId(Long userId) {
+    long uid = Require.id(userId, "ID e përdoruesit");
     return doctorRepository
-        .findByUserId(userId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profili i mjekut nuk u gjet."));
+        .findByUserId(uid)
+        .orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profili i mjekut nuk u gjet."));
   }
 
   public PatientDashboardDto patientDashboard(Long userId) {
     PatientProfile profile = requirePatientProfile(userId);
-    Long pid = profile.getId();
+    Long pid = Require.notNull(profile.getId(), "ID e profilit");
     List<Diagnosis> diagnoses = diagnosisRepository.findByPatientIdOrderByDiagnosedAtDesc(pid);
     List<Prescription> prescriptions = prescriptionRepository.findByPatientIdOrderByPrescribedAtDesc(pid);
     List<Appointment> appointments =
         appointmentRepository.findByPatientProfileIdOrderByCreatedAtDesc(pid);
-    var user = profile.getUser();
+    AppUser user = Require.notNull(profile.getUser(), "Përdoruesi i pacientit");
     return new PatientDashboardDto(
         user.getFullName(),
         user.getEmail(),
@@ -81,12 +87,16 @@ public class PortalService {
 
   public Map<String, Object> doctorDashboard(Long userId) {
     Doctor doctor = requireDoctorByUserId(userId);
-    Long doctorId = doctor.getId();
+    Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
     List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId);
     long pending =
-        appointments.stream().filter(a -> "PENDING".equalsIgnoreCase(a.getStatus())).count();
+        appointments.stream()
+            .filter(a -> a.getStatus() != null && "PENDING".equalsIgnoreCase(a.getStatus()))
+            .count();
     long confirmed =
-        appointments.stream().filter(a -> "CONFIRMED".equalsIgnoreCase(a.getStatus())).count();
+        appointments.stream()
+            .filter(a -> a.getStatus() != null && "CONFIRMED".equalsIgnoreCase(a.getStatus()))
+            .count();
     List<Diagnosis> diagnoses = diagnosisRepository.findByDoctorIdOrderByDiagnosedAtDesc(doctorId);
     List<Prescription> prescriptions = prescriptionRepository.findByDoctorIdOrderByPrescribedAtDesc(doctorId);
     long patientCount = patientProfileRepository.count();
@@ -107,30 +117,36 @@ public class PortalService {
 
   public List<Appointment> doctorAppointments(Long userId) {
     Doctor doctor = requireDoctorByUserId(userId);
-    return appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctor.getId());
+    Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
+    return appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId);
   }
 
   public Appointment updateAppointmentStatus(Long userId, Long appointmentId, String status) {
     Doctor doctor = requireDoctorByUserId(userId);
+    long apptId = Require.id(appointmentId, "ID e terminit");
+    String newStatus = Require.notBlank(status, "Statusi");
     Appointment appointment =
         appointmentRepository
-            .findById(appointmentId)
+            .findById(apptId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Termini nuk u gjet."));
-    if (appointment.getDoctor() == null || !appointment.getDoctor().getId().equals(doctor.getId())) {
+    Doctor apptDoctor = appointment.getDoctor();
+    if (apptDoctor == null || apptDoctor.getId() == null || !apptDoctor.getId().equals(doctor.getId())) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ky termin nuk i përket këtij mjeku.");
     }
-    appointment.setStatus(status);
+    appointment.setStatus(newStatus);
     return appointmentRepository.save(appointment);
   }
 
   public List<Diagnosis> doctorDiagnoses(Long userId) {
     Doctor doctor = requireDoctorByUserId(userId);
-    return diagnosisRepository.findByDoctorIdOrderByDiagnosedAtDesc(doctor.getId());
+    Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
+    return diagnosisRepository.findByDoctorIdOrderByDiagnosedAtDesc(doctorId);
   }
 
   public List<Prescription> doctorPrescriptions(Long userId) {
     Doctor doctor = requireDoctorByUserId(userId);
-    return prescriptionRepository.findByDoctorIdOrderByPrescribedAtDesc(doctor.getId());
+    Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
+    return prescriptionRepository.findByDoctorIdOrderByPrescribedAtDesc(doctorId);
   }
 
   public Doctor doctorProfile(Long userId) {
@@ -141,16 +157,27 @@ public class PortalService {
     return patientProfileRepository.findAll();
   }
 
-  public Diagnosis createDiagnosis(Long doctorUserId, Long patientId, String title, String description, String severity) {
+  public String patientDisplayName(PatientProfile patient) {
+    if (patient == null || patient.getUser() == null) {
+      return "Pacient";
+    }
+    String name = patient.getUser().getFullName();
+    return name != null && !name.isBlank() ? name : "Pacient";
+  }
+
+  public Diagnosis createDiagnosis(
+      Long doctorUserId, Long patientId, String title, String description, String severity) {
     Doctor doctor = requireDoctorByUserId(doctorUserId);
+    long pid = Require.id(patientId, "ID e pacientit");
+    String diagnosisTitle = Require.notBlank(title, "Titulli i diagnozës");
     PatientProfile patient =
         patientProfileRepository
-            .findById(patientId)
+            .findById(pid)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pacienti nuk u gjet."));
     Diagnosis d = new Diagnosis();
     d.setDoctor(doctor);
     d.setPatient(patient);
-    d.setTitle(title);
+    d.setTitle(diagnosisTitle);
     d.setDescription(description);
     d.setSeverity(severity);
     d.setDiagnosedAt(Instant.now());
@@ -165,19 +192,22 @@ public class PortalService {
       String frequency,
       String instructions) {
     Doctor doctor = requireDoctorByUserId(doctorUserId);
+    long pid = Require.id(patientId, "ID e pacientit");
+    long medId = Require.id(medicineId, "ID e barnës");
+    String dose = Require.notBlank(dosage, "Doza");
     PatientProfile patient =
         patientProfileRepository
-            .findById(patientId)
+            .findById(pid)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pacienti nuk u gjet."));
     Medicine medicine =
         medicineRepository
-            .findById(medicineId)
+            .findById(medId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barna nuk u gjet."));
     Prescription p = new Prescription();
     p.setDoctor(doctor);
     p.setPatient(patient);
     p.setMedicine(medicine);
-    p.setDosage(dosage);
+    p.setDosage(dose);
     p.setFrequency(frequency);
     p.setInstructions(instructions);
     p.setStatus("ACTIVE");

@@ -3,6 +3,7 @@ package com.hospital.controller;
 import com.hospital.entity.Department;
 import com.hospital.repository.DepartmentRepository;
 import com.hospital.service.AdminDeleteService;
+import com.hospital.util.Require;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
@@ -36,7 +37,10 @@ public class DepartmentController {
 
   @GetMapping("/{id}")
   public Department get(@PathVariable Long id) {
-    return repository.findById(id).orElseThrow(() -> new NotFoundException("Department not found"));
+    long departmentId = Require.id(id, "ID e departamentit");
+    return repository
+        .findById(departmentId)
+        .orElseThrow(() -> new NotFoundException("Department not found"));
   }
 
   @PostMapping
@@ -49,8 +53,11 @@ public class DepartmentController {
 
   @PutMapping("/{id}")
   public Department update(@PathVariable Long id, @Valid @RequestBody DepartmentRequest body) {
+    long departmentId = Require.id(id, "ID e departamentit");
     Department d =
-        repository.findById(id).orElseThrow(() -> new NotFoundException("Department not found"));
+        repository
+            .findById(departmentId)
+            .orElseThrow(() -> new NotFoundException("Department not found"));
     apply(body, d);
     return repository.save(d);
   }
@@ -62,7 +69,7 @@ public class DepartmentController {
   }
 
   private static void apply(DepartmentRequest body, Department d) {
-    d.setName(body.name());
+    d.setName(Require.notBlank(body.name(), "Emri"));
     d.setDescription(body.description());
     d.setLocation(body.location());
     d.setHeadDoctorName(body.headDoctorName());

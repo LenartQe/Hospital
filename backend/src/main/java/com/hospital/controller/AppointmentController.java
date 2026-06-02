@@ -4,6 +4,7 @@ import com.hospital.entity.Appointment;
 import com.hospital.entity.Doctor;
 import com.hospital.repository.AppointmentRepository;
 import com.hospital.repository.DoctorRepository;
+import com.hospital.util.Require;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -40,12 +41,13 @@ public class AppointmentController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public Appointment create(@Valid @RequestBody AppointmentRequest body) {
+    long doctorId = Require.notNull(body.doctorId(), "ID e mjekut");
     Doctor doctor =
         doctorRepository
-            .findById(body.doctorId())
+            .findById(doctorId)
             .orElseThrow(() -> new NotFoundException("Doctor not found"));
     Appointment a = new Appointment();
-    a.setPatientName(body.patientName());
+    a.setPatientName(Require.notBlank(body.patientName(), "Emri i pacientit"));
     a.setEmail(body.email());
     a.setPhone(body.phone());
     a.setPreferredDate(body.preferredDate());
@@ -57,11 +59,13 @@ public class AppointmentController {
 
   @PatchMapping("/{id}/status")
   public Appointment updateStatus(@PathVariable Long id, @RequestBody StatusRequest body) {
+    long appointmentId = Require.id(id, "ID e terminit");
+    String status = Require.notBlank(body.status(), "Statusi");
     Appointment a =
         appointmentRepository
-            .findById(id)
+            .findById(appointmentId)
             .orElseThrow(() -> new NotFoundException("Appointment not found"));
-    a.setStatus(body.status());
+    a.setStatus(status);
     return appointmentRepository.save(a);
   }
 

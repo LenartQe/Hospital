@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -41,19 +42,37 @@ public class JwtService {
   }
 
   public boolean isValid(String token) {
+    if (token == null || token.isBlank()) {
+      return false;
+    }
     try {
       Claims claims = parseClaims(token);
-      return claims.getExpiration().after(new Date());
+      Date exp = claims.getExpiration();
+      return exp != null && exp.after(new Date());
     } catch (Exception e) {
       return false;
     }
   }
 
+  @Nullable
   public Long getUserId(String token) {
-    return Long.parseLong(parseClaims(token).getSubject());
+    try {
+      String subject = parseClaims(token).getSubject();
+      if (subject == null || subject.isBlank()) {
+        return null;
+      }
+      return Long.parseLong(subject);
+    } catch (Exception e) {
+      return null;
+    }
   }
 
+  @Nullable
   public String getRole(String token) {
-    return parseClaims(token).get("role", String.class);
+    try {
+      return parseClaims(token).get("role", String.class);
+    } catch (Exception e) {
+      return null;
+    }
   }
 }

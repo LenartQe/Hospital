@@ -32,11 +32,18 @@ public class SecurityConfig {
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/api/auth/**")
+                auth.requestMatchers("/api/auth/**", "/api/health", "/api/health/**")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/departments/**", "/api/doctors/**")
+                    .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/appointments")
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/departments",
+                        "/api/departments/**",
+                        "/api/doctors",
+                        "/api/doctors/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/appointments", "/api/appointments/**")
                     .permitAll()
                     .requestMatchers("/api/patient/**")
                     .hasRole("PATIENT")
