@@ -1,6 +1,9 @@
 import { getAuthHeader } from "auth/authStorage";
 
-const API_BASE = process.env.REACT_APP_API_URL || "";
+/** In dev, call Spring Boot directly if CRA proxy is unavailable. */
+const API_BASE =
+  process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === "development" ? "http://localhost:8082" : "");
 
 /** Extract a readable message from API error responses (JSON or plain text). */
 export function parseApiError(err) {
@@ -23,6 +26,9 @@ export function parseApiError(err) {
   if (raw.includes('"message"')) {
     const match = raw.match(/"message"\s*:\s*"([^"]+)"/);
     if (match) return match[1];
+  }
+  if (raw === "Failed to fetch" || raw.includes("Failed to fetch")) {
+    return "API nuk përgjigjet. Nisni MySQL (XAMPP), pastaj backend-in në portin 8082.";
   }
   if (raw === "Internal Server Error" || raw.includes("Internal Server Error")) {
     return "Gabim në server. Rinisni backend-in (port 8082) dhe provoni përsëri.";
