@@ -136,8 +136,10 @@ export default function App() {
       return <Route path={route.route} element={element} key={route.key} />;
     });
 
+  const useCustomPatientPortal = auth?.role === "PATIENT" && pathname.startsWith("/patient");
+
   const dashboardShell =
-    layout === "dashboard" && auth?.token ? (
+    layout === "dashboard" && auth?.token && !useCustomPatientPortal ? (
       <Sidenav
         color={sidenavColor}
         brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}

@@ -7,121 +7,94 @@ import {
   CONTACT_PHONE_TEL,
 } from "./contactInfo";
 import "./hospital-site.css";
+import "./hospital-navbar.css";
 
 const telHref = `tel:${CONTACT_PHONE_TEL}`;
+
+const MAIN_LINKS = [
+  { to: "/", label: "Ballina", end: true },
+  { to: "/about", label: "Rreth nesh" },
+  { to: "/services", label: "Shërbimet" },
+  { to: "/departments", label: "Departamentet" },
+  { to: "/doctors", label: "Mjekët" },
+  { to: "/appointment", label: "Terminet" },
+  { to: "/contact", label: "Kontakti" },
+];
 
 export default function PublicLayout() {
   const [open, setOpen] = useState(false);
 
+  const closeMenu = () => setOpen(false);
+
   return (
     <div id="top">
-      <header>
-        <div className="header-top-bar">
-          <div className="container">
-            <div className="row align-items-center">
-              <div className="col-lg-6">
-                <ul className="top-bar-info list-inline-item pl-0 mb-0">
-                  <li className="list-inline-item">
-                    <a href={CONTACT_EMAIL_MAILTO}>
-                      <i className="icofont-support-faq mr-2" />
-                      {CONTACT_EMAIL}
-                    </a>
-                  </li>
-                  <li className="list-inline-item">
-                    <i className="icofont-location-pin mr-2" />
-                    Spitali i Prizrenit
-                  </li>
-                </ul>
-              </div>
-              <div className="col-lg-6">
-                <div className="text-lg-right top-right-bar mt-2 mt-lg-0">
-                  <NavLink
-                    to="/authentication/sign-in?role=patient"
-                    className="btn btn-sm btn-light mr-1"
-                  >
-                    Pacient
-                  </NavLink>
-                  <NavLink
-                    to="/authentication/sign-in?role=doctor"
-                    className="btn btn-sm btn-light mr-1"
-                  >
-                    Mjek
-                  </NavLink>
-                  <NavLink
-                    to="/authentication/sign-in?role=admin"
-                    className="btn btn-sm btn-main mr-2"
-                  >
-                    Administrim
-                  </NavLink>
-                  <span className="hospital-phone-label">Telefoni:</span>
-                  <a href={telHref} className="hospital-phone-link">
-                    {CONTACT_PHONE_DISPLAY}
-                  </a>
-                </div>
-              </div>
+      <header className="hospital-site-header">
+        <div className="hospital-header-top">
+          <div className="hospital-header-top__inner">
+            <ul className="hospital-header-top__contact">
+              <li>
+                <a href={CONTACT_EMAIL_MAILTO}>
+                  <i className="icofont-support-faq" aria-hidden />
+                  {CONTACT_EMAIL}
+                </a>
+              </li>
+              <li>
+                <i className="icofont-location-pin" aria-hidden />
+                Spitali i Prizrenit
+              </li>
+            </ul>
+            <div className="hospital-header-top__actions">
+              <NavLink to="/authentication/sign-in?role=patient" className="hospital-btn-outline">
+                Pacient
+              </NavLink>
+              <NavLink to="/authentication/sign-in?role=doctor" className="hospital-btn-outline">
+                Mjek
+              </NavLink>
+              <NavLink to="/authentication/sign-in?role=admin" className="hospital-btn-solid">
+                Administrim
+              </NavLink>
+              <span className="hospital-header-top__phone">
+                <span>Telefoni:</span>
+                <a href={telHref}>{CONTACT_PHONE_DISPLAY}</a>
+              </span>
             </div>
           </div>
         </div>
-        <nav className="navbar navbar-expand-lg navigation" id="navbar">
-          <div className="container">
-            <NavLink className="navbar-brand" to="/">
+
+        <div className="hospital-header-main">
+          <div className="hospital-header-main__inner">
+            <NavLink className="hospital-header-main__brand" to="/" onClick={closeMenu}>
               <img
                 src={`${process.env.PUBLIC_URL}/novena/images/logo.png`}
                 alt="Spitali i Prizrenit"
-                className="img-fluid"
               />
             </NavLink>
             <button
-              className="navbar-toggler collapsed"
               type="button"
-              aria-label="Menu"
+              className="hospital-header-main__toggle"
+              aria-label="Hap menunë"
+              aria-expanded={open}
               onClick={() => setOpen(!open)}
             >
               <span className="icofont-navigation-menu" />
             </button>
-            <div className={`collapse navbar-collapse${open ? " show" : ""}`} id="navbarmain">
-              <ul className="navbar-nav ml-auto">
-                <li className="nav-item">
-                  <NavLink className="nav-link" to="/" end onClick={() => setOpen(false)}>
-                    Ballina
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink className="nav-link" to="/about" onClick={() => setOpen(false)}>
-                    Rreth nesh
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink className="nav-link" to="/services" onClick={() => setOpen(false)}>
-                    Shërbimet
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink className="nav-link" to="/departments" onClick={() => setOpen(false)}>
-                    Departamentet
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink className="nav-link" to="/doctors" onClick={() => setOpen(false)}>
-                    Mjekët
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink className="nav-link" to="/appointment" onClick={() => setOpen(false)}>
-                    Terminet
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink className="nav-link" to="/contact" onClick={() => setOpen(false)}>
-                    Kontakti
-                  </NavLink>
-                </li>
+            <nav className={`hospital-header-main__nav${open ? " is-open" : ""}`} id="navbarmain">
+              <ul className="hospital-header-main__links">
+                {MAIN_LINKS.map((link) => (
+                  <li key={link.to}>
+                    <NavLink className="nav-link" to={link.to} end={link.end} onClick={closeMenu}>
+                      {link.label}
+                    </NavLink>
+                  </li>
+                ))}
               </ul>
-            </div>
+            </nav>
           </div>
-        </nav>
+        </div>
       </header>
+
       <Outlet />
+
       <footer className="footer section gray-bg">
         <div className="container">
           <div className="row">
