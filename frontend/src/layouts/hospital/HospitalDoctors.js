@@ -107,8 +107,9 @@ export default function HospitalDoctors() {
       !window.confirm(
         "Të fshihet ky mjek? Terminet, diagnozat dhe recetat e lidhura do të fshihen gjithashtu."
       )
-    )
+    ) {
       return;
+    }
     hospitalApi.doctors
       .remove(id)
       .then(() => {

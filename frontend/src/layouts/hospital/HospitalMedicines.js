@@ -90,7 +90,9 @@ export default function HospitalMedicines() {
   };
 
   const remove = (id) => {
-    if (!window.confirm("Të fshihet kjo bar? Recetat e lidhura do të fshihen gjithashtu.")) return;
+    if (!window.confirm("Të fshihet kjo bar? Recetat e lidhura do të fshihen gjithashtu.")) {
+      return;
+    }
     hospitalApi.medicines
       .remove(id)
       .then(() => {

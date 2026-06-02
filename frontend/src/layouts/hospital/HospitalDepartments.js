@@ -76,7 +76,13 @@ export default function HospitalDepartments() {
   };
 
   const remove = (id) => {
-    if (!window.confirm("Të fshihet ky departament? Mjekët e lidhur do të shkëputen nga ky departament.")) return;
+    if (
+      !window.confirm(
+        "Të fshihet ky departament? Mjekët e lidhur do të shkëputen nga ky departament."
+      )
+    ) {
+      return;
+    }
     hospitalApi.departments
       .remove(id)
       .then(() => {
