@@ -55,7 +55,7 @@ export default function DoctorPatients() {
     hospitalApi.doctor
       .addDiagnosis(patientId, { title: dxTitle, description: dxDesc, severity: "MODERATE" })
       .then(() => {
-        setMsg("Diagnoza u ruajt.");
+        setMsg("Diagnoza u ruajt dhe shfaqet te Diagnozat e mia.");
         setDxTitle("");
         setDxDesc("");
         setError("");

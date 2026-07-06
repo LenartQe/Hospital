@@ -1,6 +1,9 @@
 package com.hospital.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -9,6 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -21,6 +26,7 @@ import jakarta.persistence.ForeignKey;
 
 @Entity
 @Table(name = "diagnoses")
+@Access(AccessType.FIELD)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,6 +38,10 @@ public class Diagnosis {
 
   @Column(name = "diagnosis_name", nullable = false, length = 300)
   private String diagnosisName;
+
+  /** Legacy DB column kept in sync with diagnosisName. */
+  @Column(name = "title", length = 300)
+  private String legacyTitle;
 
   @Column(length = 4000)
   private String description;
@@ -57,12 +67,29 @@ public class Diagnosis {
   private String severity;
 
   /** Backward-compatible alias. */
+  @JsonProperty("title")
   public String getTitle() {
     return diagnosisName;
   }
 
   public void setTitle(String title) {
     this.diagnosisName = title;
+  }
+
+  @PrePersist
+  void beforeInsert() {
+    if (createdAt == null) {
+      createdAt = LocalDateTime.now();
+    }
+    if (diagnosisName == null || diagnosisName.isBlank()) {
+      throw new IllegalStateException("diagnosis_name is required");
+    }
+    legacyTitle = diagnosisName;
+  }
+
+  @PreUpdate
+  void beforeUpdate() {
+    legacyTitle = diagnosisName;
   }
 
   /** Backward-compatible alias for portal APIs. */

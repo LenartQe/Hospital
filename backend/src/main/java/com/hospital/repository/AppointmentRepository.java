@@ -19,6 +19,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
   @Query("SELECT a FROM Appointment a WHERE LOWER(a.email) = LOWER(:email) ORDER BY a.createdAt DESC")
   List<Appointment> findByEmailIgnoreCaseOrderByCreatedAtDesc(@Param("email") String email);
 
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query("DELETE FROM Appointment a WHERE a.doctor.id = :doctorId AND a.patient.id = :patientId")
+  void deleteByDoctorIdAndPatientId(
+      @Param("doctorId") Long doctorId, @Param("patientId") Long patientId);
+
   @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId")
   long countByDoctorId(@Param("doctorId") Long doctorId);
 

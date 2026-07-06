@@ -204,7 +204,13 @@ public class PortalService {
   public List<DoctorAppointmentDTO> doctorAppointmentDtos(Long userId) {
     Doctor doctor = requireDoctorByUserId(userId);
     Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
+    Set<Long> hidden = hiddenPatientIds(doctorId);
     return appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId).stream()
+        .filter(
+            a -> {
+              Patient p = a.getPatient();
+              return p == null || p.getId() == null || !hidden.contains(p.getId());
+            })
         .map(this::toAppointmentDto)
         .toList();
   }
@@ -253,8 +259,7 @@ public class PortalService {
   public List<Patient> listPatientsForDoctor(Long userId) {
     Doctor doctor = requireDoctorByUserId(userId);
     Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
-    Set<Long> hidden = new HashSet<>();
-    doctorHiddenPatientRepository.findByDoctorId(doctorId).forEach(h -> hidden.add(h.getPatientId()));
+    Set<Long> hidden = hiddenPatientIds(doctorId);
     List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId);
     Map<Long, Patient> byId = new LinkedHashMap<>();
     for (Appointment appointment : appointments) {
@@ -278,6 +283,13 @@ public class PortalService {
       hidden.setPatientId(pid);
       doctorHiddenPatientRepository.save(hidden);
     }
+    appointmentRepository.deleteByDoctorIdAndPatientId(doctorId, pid);
+  }
+
+  private Set<Long> hiddenPatientIds(Long doctorId) {
+    Set<Long> hidden = new HashSet<>();
+    doctorHiddenPatientRepository.findByDoctorId(doctorId).forEach(h -> hidden.add(h.getPatientId()));
+    return hidden;
   }
 
   public String patientDisplayName(PatientProfile profile) {
@@ -291,7 +303,7 @@ public class PortalService {
       }
     }
     if (profile.getPatient() != null) {
-      return patientDisplayName(profile.getPatient());
+      return fallbackPatientName(profile.getPatient());
     }
     return "Pacient";
   }
@@ -303,7 +315,16 @@ public class PortalService {
     if (patient.getUserId() != null) {
       return patientProfileRepository
           .findByUserId(patient.getUserId())
-          .map(this::patientDisplayName)
+          .map(
+              profile -> {
+                if (profile.getUser() != null) {
+                  String name = profile.getUser().getFullName();
+                  if (name != null && !name.isBlank()) {
+                    return name;
+                  }
+                }
+                return fallbackPatientName(patient);
+              })
           .orElseGet(() -> fallbackPatientName(patient));
     }
     return fallbackPatientName(patient);
@@ -315,12 +336,13 @@ public class PortalService {
     long pid = Require.id(patientId, "ID e pacientit");
     String diagnosisTitle = Require.notBlank(title, "Titulli i diagnozës");
     Patient patient = resolvePatientById(pid);
+    ensureDoctorAppointmentsLinked(doctor);
     assertDoctorPatientAccess(doctor, patient);
 
     Diagnosis d = new Diagnosis();
     d.setDoctor(doctor);
     d.setPatient(patient);
-    d.setDiagnosisName(diagnosisTitle);
+    d.setDiagnosisName(diagnosisTitle.trim());
     d.setDescription(description);
     d.setSeverity(severity);
     d.setCreatedAt(LocalDateTime.now());
@@ -339,6 +361,7 @@ public class PortalService {
     long medId = Require.id(medicineId, "ID e barnës");
     String dose = Require.notBlank(dosage, "Doza");
     Patient patient = resolvePatientById(pid);
+    ensureDoctorAppointmentsLinked(doctor);
     assertDoctorPatientAccess(doctor, patient);
     Medicine medicine =
         medicineRepository
@@ -369,10 +392,24 @@ public class PortalService {
         patientService.ensureForAppointment(
             appointment.getPatientName(), appointment.getEmail(), appointment.getPhone());
     appointment.setPatient(patient);
+    if (patient.getEmail() == null || patient.getEmail().isBlank()) {
+      if (appointment.getEmail() != null && !appointment.getEmail().isBlank()) {
+        patient.setEmail(appointment.getEmail().trim().toLowerCase());
+        patientRepository.save(patient);
+      }
+    }
     if (patient.getUserId() != null) {
       patientProfileRepository
           .findByUserId(patient.getUserId())
-          .ifPresent(profile -> appointment.setPatientProfileId(profile.getId()));
+          .ifPresent(
+              profile -> {
+                appointment.setPatientProfileId(profile.getId());
+                if (profile.getPatient() == null
+                    || !patient.getId().equals(profile.getPatient().getId())) {
+                  profile.setPatient(patient);
+                  patientProfileRepository.save(profile);
+                }
+              });
     }
     appointmentRepository.save(appointment);
   }
@@ -380,13 +417,33 @@ public class PortalService {
   private void assertDoctorPatientAccess(Doctor doctor, Patient patient) {
     Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
     Long patientId = Require.notNull(patient.getId(), "ID e pacientit");
+    String patientEmail =
+        patient.getEmail() != null ? patient.getEmail().trim().toLowerCase() : null;
     boolean linked =
         appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId).stream()
             .anyMatch(
-                a -> a.getPatient() != null && patientId.equals(a.getPatient().getId()));
+                a -> {
+                  Patient ap = a.getPatient();
+                  if (ap != null && patientId.equals(ap.getId())) {
+                    return true;
+                  }
+                  return patientEmail != null
+                      && a.getEmail() != null
+                      && patientEmail.equals(a.getEmail().trim().toLowerCase());
+                });
     if (!linked) {
       throw new ResponseStatusException(
           HttpStatus.FORBIDDEN, "Ky pacient nuk ka termin me këtë mjek.");
+    }
+  }
+
+  private void ensureDoctorAppointmentsLinked(Doctor doctor) {
+    Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
+    for (Appointment appointment :
+        appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId)) {
+      if (appointment.getPatient() == null || appointment.getPatient().getId() == null) {
+        linkAppointmentToPatient(appointment);
+      }
     }
   }
 
@@ -466,13 +523,62 @@ public class PortalService {
   }
 
   private Patient resolvePatient(PatientProfile profile, AppUser user) {
-    if (profile.getPatient() != null) {
-      return profile.getPatient();
+    Patient patient = null;
+    if (user.getEmail() != null && !user.getEmail().isBlank()) {
+      String email = user.getEmail().trim().toLowerCase();
+      patient =
+          patientRepository
+              .findByEmail(email)
+              .map(
+                  existing -> {
+                    if (existing.getUserId() == null || existing.getUserId().equals(user.getId())) {
+                      existing.setUserId(user.getId());
+                      if (user.getPhone() != null && !user.getPhone().isBlank()) {
+                        existing.setPhoneNumber(user.getPhone());
+                      }
+                      return patientRepository.save(existing);
+                    }
+                    return existing;
+                  })
+              .orElse(null);
     }
-    Patient patient = patientService.ensureForUser(user);
+    if (patient == null && profile.getPatient() != null) {
+      patient = profile.getPatient();
+    }
+    if (patient == null) {
+      patient = patientService.ensureForUser(user);
+    }
+    if (profile.getPatient() != null && !profile.getPatient().getId().equals(patient.getId())) {
+      consolidatePatientRecords(profile.getPatient(), patient);
+    }
     profile.setPatient(patient);
     patientProfileRepository.save(profile);
     return patient;
+  }
+
+  private void consolidatePatientRecords(Patient duplicate, Patient canonical) {
+    if (duplicate == null
+        || canonical == null
+        || duplicate.getId() == null
+        || canonical.getId() == null
+        || duplicate.getId().equals(canonical.getId())) {
+      return;
+    }
+    for (Diagnosis diagnosis :
+        diagnosisRepository.findByPatientIdOrderByCreatedAtDesc(duplicate.getId())) {
+      diagnosis.setPatient(canonical);
+      diagnosisRepository.save(diagnosis);
+    }
+    for (Prescription prescription :
+        prescriptionRepository.findByPatientIdOrderByPrescribedAtDesc(duplicate.getId())) {
+      prescription.setPatient(canonical);
+      prescriptionRepository.save(prescription);
+    }
+    for (Appointment appointment :
+        appointmentRepository.findByPatientIdOrderByCreatedAtDesc(duplicate.getId())) {
+      appointment.setPatient(canonical);
+      appointmentRepository.save(appointment);
+    }
   }
 
   private Patient resolvePatientById(long patientOrProfileId) {

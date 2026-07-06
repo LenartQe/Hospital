@@ -26,6 +26,36 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
     alterNullable("appointments", "doctor_id");
     addColumnIfMissing("doctors", "featured", "TINYINT(1) NOT NULL DEFAULT 0");
     addColumnIfMissing("medicines", "specialty_key", "VARCHAR(50) NULL");
+    fixDiagnosesTable();
+  }
+
+  private void fixDiagnosesTable() {
+    try {
+      addColumnIfMissing("diagnoses", "diagnosis_name", "VARCHAR(300) NULL");
+      Integer titleExists =
+          jdbcTemplate.queryForObject(
+              "SELECT COUNT(*) FROM information_schema.COLUMNS "
+                  + "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'diagnoses' AND COLUMN_NAME = 'title'",
+              Integer.class);
+      if (titleExists != null && titleExists > 0) {
+        jdbcTemplate.execute(
+            "UPDATE diagnoses SET diagnosis_name = title "
+                + "WHERE diagnosis_name IS NULL OR TRIM(diagnosis_name) = ''");
+      }
+      jdbcTemplate.execute(
+          "UPDATE diagnoses SET diagnosis_name = CONCAT('Diagnoze #', id) "
+              + "WHERE diagnosis_name IS NULL OR TRIM(diagnosis_name) = ''");
+      jdbcTemplate.execute("ALTER TABLE diagnoses MODIFY diagnosis_name VARCHAR(300) NOT NULL");
+      if (titleExists != null && titleExists > 0) {
+        jdbcTemplate.execute(
+            "UPDATE diagnoses SET title = diagnosis_name "
+                + "WHERE title IS NULL OR TRIM(title) = ''");
+        jdbcTemplate.execute("ALTER TABLE diagnoses MODIFY title VARCHAR(300) NULL");
+      }
+      log.info("Schema OK: diagnoses.diagnosis_name");
+    } catch (Exception e) {
+      log.warn("Could not fix diagnoses table: {}", e.getMessage());
+    }
   }
 
   private void addColumnIfMissing(String table, String column, String definition) {

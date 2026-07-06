@@ -9,12 +9,15 @@ import {
   Pill,
   Clock,
   ArrowRight,
+  Check,
+  Ban,
 } from "lucide-react";
 import { hospitalApi, parseApiError } from "api/hospitalApi";
 import DoctorPortalLayout from "./DoctorPortalLayout";
 import PageHeader from "./components/PageHeader";
 import StatusBadge from "./components/StatusBadge";
 import MedicalCard from "./components/MedicalCard";
+import PrimaryButton from "./components/PrimaryButton";
 
 const SHORTCUTS = [
   {
@@ -77,13 +80,25 @@ export default function DoctorDashboard() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
     hospitalApi.doctor
       .dashboard()
       .then(setData)
       .catch((e) => setError(parseApiError(e)))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
   }, []);
+
+  const changeStatus = (id, status) => {
+    hospitalApi.doctor
+      .updateAppointmentStatus(id, status)
+      .then(load)
+      .catch((e) => setError(parseApiError(e)));
+  };
 
   const doctor = data?.doctor;
 
@@ -144,13 +159,35 @@ export default function DoctorDashboard() {
                 {(data.appointments || []).slice(0, 5).map((a) => (
                   <div
                     key={a.id}
-                    className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3 transition-colors hover:bg-white"
+                    className="rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3 transition-colors hover:bg-white"
                   >
-                    <div>
-                      <p className="font-medium text-slate-900">{a.patientName}</p>
-                      <p className="text-xs text-slate-500">{a.preferredDate || "—"}</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-slate-900">{a.patientName}</p>
+                        <p className="text-xs text-slate-500">{a.preferredDate || "—"}</p>
+                      </div>
+                      <StatusBadge status={a.status} />
                     </div>
-                    <StatusBadge status={a.status} />
+                    {a.status === "PENDING" ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <PrimaryButton
+                          variant="success"
+                          className="!px-3 !py-1.5 text-xs"
+                          onClick={() => changeStatus(a.id, "CONFIRMED")}
+                        >
+                          <Check size={14} />
+                          Prano
+                        </PrimaryButton>
+                        <PrimaryButton
+                          variant="danger"
+                          className="!px-3 !py-1.5 text-xs"
+                          onClick={() => changeStatus(a.id, "REJECTED")}
+                        >
+                          <Ban size={14} />
+                          Refuzo
+                        </PrimaryButton>
+                      </div>
+                    ) : null}
                   </div>
                 ))}
                 {!data.appointments?.length ? (

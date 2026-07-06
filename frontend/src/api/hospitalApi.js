@@ -88,8 +88,14 @@ export const hospitalApi = {
         method: "POST",
         body: JSON.stringify(body),
       }),
+    addPrescription: (patientId, body) =>
+      request(`/api/doctor/patients/${patientId}/prescriptions`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
     hidePatient: (patientId) =>
       request(`/api/doctor/patients/${patientId}`, { method: "DELETE" }),
+  },
   stats: () => request("/api/stats"),
   departments: {
     list: () => request("/api/departments"),
