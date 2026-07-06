@@ -1,13 +1,11 @@
 package com.hospital.config;
 
 import com.hospital.entity.AppUser;
-import com.hospital.entity.Department;
 import com.hospital.entity.Doctor;
 import com.hospital.entity.UserRole;
 import com.hospital.repository.AppUserRepository;
-import com.hospital.repository.DepartmentRepository;
 import com.hospital.repository.DoctorRepository;
-import java.util.Optional;
+import com.hospital.util.DoctorCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -16,7 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
- * Keeps hospital doctor records, emails, profile images, and login accounts in sync on every startup.
+ * Enriches existing Mjekët doctors without overwriting their specialties or creating duplicates.
  */
 @Component
 @Order(3)
@@ -24,30 +22,27 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
 
   private static final Logger log = LoggerFactory.getLogger(DoctorHospitalDataSync.class);
 
-  private static final String LENART_IMG =
-      "https://images.unsplash.com/photo-1622253692010-21aabed25171?w=400&h=400&fit=crop&crop=face";
-  private static final String MIMOZA_IMG =
-      "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face";
-  private static final String SARA_IMG =
+  private static final String IMG_SARA =
       "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop&crop=face";
+  private static final String IMG_KADRI =
+      "https://images.unsplash.com/photo-1537368911262-87184d0ecad2?w=400&h=400&fit=crop&crop=face";
+  private static final String IMG_EMIR =
+      "https://images.unsplash.com/photo-1582750433449-648ed127fbfe?w=400&h=400&fit=crop&crop=face";
+  private static final String IMG_LENART =
+      "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face";
+  private static final String IMG_MIMOZA =
+      "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face";
+  private static final String IMG_BLERDON =
+      "https://images.unsplash.com/photo-1624224837377-28f9f55818f4?w=400&h=400&fit=crop&crop=face";
 
-  private static final java.util.Set<String> FEATURED_EMAILS =
-      java.util.Set.of(
-          "lenartqollaku@gmail.com",
-          "mimoza.kusari@spitaliprizrenit.com",
-          "sara.kryeziu@spitaliprizrenit.com");
-
-  private final DepartmentRepository departmentRepository;
   private final DoctorRepository doctorRepository;
   private final AppUserRepository appUserRepository;
   private final PasswordEncoder passwordEncoder;
 
   public DoctorHospitalDataSync(
-      DepartmentRepository departmentRepository,
       DoctorRepository doctorRepository,
       AppUserRepository appUserRepository,
       PasswordEncoder passwordEncoder) {
-    this.departmentRepository = departmentRepository;
     this.doctorRepository = doctorRepository;
     this.appUserRepository = appUserRepository;
     this.passwordEncoder = passwordEncoder;
@@ -55,207 +50,113 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
 
   @Override
   public void run(String... args) {
-    Department general = ensureDepartment("Mjekësi e Përgjithshme", "Kujdes primar dhe diagnostikë.");
-    Department cardiology = ensureDepartment("Kardiologji", "Kujdes për zemrën dhe enët e gjakut.");
-    Department pediatrics = ensureDepartment("Pediatri", "Kujdes për fëmijët dhe adoleshentët.");
-
-    syncDoctorSafe(
-        "Lenart Qollaku",
-        "lenartqollaku@gmail.com",
-        "+383 44 200 001",
-        "Mjek i përgjithshëm",
-        general,
-        LENART_IMG);
-    syncDoctorSafe(
-        "Mimoza Kusari",
-        "mimoza.kusari@spitaliprizrenit.com",
-        "+383 44 200 002",
-        "Kardiologe",
-        cardiology,
-        MIMOZA_IMG);
-    syncDoctorSafe(
-        "Sara Kryeziu",
-        "sara.kryeziu@spitaliprizrenit.com",
-        "+383 44 200 003",
-        "Pediatre",
-        pediatrics,
-        SARA_IMG);
-
-    syncByNameContains("mimoza", "kusari", "mimoza.kusari@spitaliprizrenit.com", MIMOZA_IMG);
-    syncByNameContains("sara", "kryeziu", "sara.kryeziu@spitaliprizrenit.com", SARA_IMG);
-    syncByNameContains("lenart", "qollaku", "lenartqollaku@gmail.com", LENART_IMG);
-
-    applyFeaturedFlags();
+    try {
+      reconcileFeaturedDoctors();
+      applyProfileImages();
+      ensureDoctorLoginAccounts();
+    } catch (Exception ex) {
+      log.warn("Doctor portal sync partial failure: {}", ex.getMessage());
+    }
   }
 
-  private void applyFeaturedFlags() {
-    doctorRepository
-        .findAll()
+  /** Keep one featured record per email (original / lowest id); hide sync duplicates. */
+  private void reconcileFeaturedDoctors() {
+    java.util.Map<String, java.util.List<Doctor>> grouped = new java.util.LinkedHashMap<>();
+    doctorRepository.findAll().stream()
+        .filter(d -> d.getEmail() != null && !d.getEmail().isBlank())
+        .forEach(
+            d -> grouped.computeIfAbsent(d.getEmail().trim().toLowerCase(), k -> new java.util.ArrayList<>()).add(d));
+
+    grouped.values().forEach(this::markCanonicalDoctor);
+  }
+
+  private void markCanonicalDoctor(java.util.List<Doctor> sameEmail) {
+    sameEmail.sort(java.util.Comparator.comparing(Doctor::getId));
+    Doctor canonical = sameEmail.get(0);
+    canonical.setFeatured(true);
+    doctorRepository.save(canonical);
+    for (int i = 1; i < sameEmail.size(); i++) {
+      Doctor duplicate = sameEmail.get(i);
+      duplicate.setFeatured(false);
+      duplicate.setUserId(null);
+      doctorRepository.save(duplicate);
+    }
+  }
+
+  private void applyProfileImages() {
+    doctorRepository.findAll().stream()
+        .filter(Doctor::isFeatured)
         .forEach(
             doctor -> {
-              boolean featured =
-                  doctor.getEmail() != null
-                      && FEATURED_EMAILS.contains(doctor.getEmail().trim().toLowerCase());
-              if (doctor.isFeatured() != featured) {
-                doctor.setFeatured(featured);
+              String image = imageForDoctor(doctor.getFullName());
+              if (image != null) {
+                doctor.setImageUrl(image);
                 doctorRepository.save(doctor);
               }
             });
   }
 
-  private Department ensureDepartment(String name, String description) {
-    return departmentRepository.findAll().stream()
-        .filter(d -> name.equalsIgnoreCase(d.getName()))
-        .findFirst()
-        .orElseGet(
-            () -> {
-              Department d = new Department();
-              d.setName(name);
-              d.setDescription(description);
-              d.setLocation("Spitali i Prizrenit");
-              return departmentRepository.save(d);
-            });
+  private String imageForDoctor(String fullName) {
+    if (fullName == null) {
+      return null;
+    }
+    String name = fullName.toLowerCase();
+    if (name.contains("sara") && name.contains("kryeziu")) {
+      return IMG_SARA;
+    }
+    if (name.contains("kadri") && name.contains("mustafa")) {
+      return IMG_KADRI;
+    }
+    if (name.contains("emir") && name.contains("zoga")) {
+      return IMG_EMIR;
+    }
+    if (name.contains("lenart") && name.contains("qollaku")) {
+      return IMG_LENART;
+    }
+    if (name.contains("mimoza") && name.contains("kusari")) {
+      return IMG_MIMOZA;
+    }
+    if (name.contains("blerdon") && name.contains("sopaj")) {
+      return IMG_BLERDON;
+    }
+    return null;
   }
 
-  private void syncDoctor(
-      String fullName,
-      String email,
-      String phone,
-      String specialty,
-      Department department,
-      String imageUrl) {
-    String normalizedEmail = email.trim().toLowerCase();
-    Doctor doctor =
-        doctorRepository.findAll().stream()
-            .filter(d -> normalizedEmail.equalsIgnoreCase(d.getEmail()))
-            .reduce(this::preferDoctorRecord)
-            .orElseGet(() -> findByName(fullName).orElse(null));
+  private void ensureDoctorLoginAccounts() {
+    DoctorCatalog.publicDoctors(doctorRepository.findByFeaturedTrueOrderByNameAsc())
+        .forEach(this::ensureAccountForDoctor);
+  }
 
-    if (doctor == null) {
-      doctor = new Doctor();
-      doctor.setFullName(fullName);
+  private void ensureAccountForDoctor(Doctor doctor) {
+    if (doctor.getEmail() == null || doctor.getEmail().isBlank()) {
+      return;
     }
-
-    doctor.setFullName(fullName);
-    doctor.setEmail(normalizedEmail);
-    doctor.setPhone(phone);
-    doctor.setSpecialty(specialty);
-    doctor.setDepartment(department);
-    doctor.setImageUrl(imageUrl);
-    doctor.setFeatured(
-        email != null && FEATURED_EMAILS.contains(normalizedEmail));
-    if (doctor.getBio() == null || doctor.getBio().isBlank()) {
-      doctor.setBio("Mjek në Spitalin e Prizrenit.");
-    }
-    doctor = doctorRepository.save(doctor);
-
+    String email = doctor.getEmail().trim().toLowerCase();
     AppUser user =
         appUserRepository
-            .findByEmailAndRole(normalizedEmail, UserRole.DOCTOR)
+            .findByEmailAndRole(email, UserRole.DOCTOR)
             .orElseGet(
                 () -> {
                   AppUser created = new AppUser();
-                  created.setEmail(normalizedEmail);
-                  created.setPasswordHash(passwordEncoder.encode(AuthDataInitializer.DEMO_PASSWORD));
+                  created.setEmail(email);
                   created.setRole(UserRole.DOCTOR);
-                  created.setFullName(fullName);
-                  created.setPhone(phone);
-                  return appUserRepository.save(created);
+                  return created;
                 });
-
-    if (!fullName.equals(user.getFullName())) {
-      user.setFullName(fullName);
-      user.setPhone(phone);
-      appUserRepository.save(user);
-    }
+    user.setFullName(doctor.getFullName());
+    user.setPhone(doctor.getPhone());
     user.setPasswordHash(passwordEncoder.encode(AuthDataInitializer.DEMO_PASSWORD));
-    appUserRepository.save(user);
+    user = appUserRepository.save(user);
 
-    linkDoctorAccount(doctor, user);
+    doctorRepository.findAll().stream()
+        .filter(d -> email.equalsIgnoreCase(d.getEmail()) && !doctor.getId().equals(d.getId()))
+        .forEach(
+            other -> {
+              other.setUserId(null);
+              other.setFeatured(false);
+              doctorRepository.save(other);
+            });
 
-    log.debug("Synced doctor profile: {} <{}>", fullName, normalizedEmail);
-  }
-
-  private void linkDoctorAccount(Doctor doctor, AppUser user) {
-    if (doctor.getUserId() != null) {
-      if (!doctor.getUserId().equals(user.getId())) {
-        log.warn(
-            "Doctor {} already linked to user id {}; keeping existing link.",
-            doctor.getFullName(),
-            doctor.getUserId());
-      }
-      return;
-    }
-    Optional<Doctor> existingOwner = doctorRepository.findByUserId(user.getId());
-    if (existingOwner.isPresent() && !existingOwner.get().getId().equals(doctor.getId())) {
-      log.warn(
-          "App user {} already linked to doctor {}; skipping link for {}.",
-          user.getEmail(),
-          existingOwner.get().getFullName(),
-          doctor.getFullName());
-      return;
-    }
     doctor.setUserId(user.getId());
     doctorRepository.save(doctor);
-  }
-
-  private Doctor preferDoctorRecord(Doctor current, Doctor candidate) {
-    if (isPreferredDoctorName(candidate.getFullName()) && !isPreferredDoctorName(current.getFullName())) {
-      return candidate;
-    }
-    if (!isPreferredDoctorName(candidate.getFullName()) && isPreferredDoctorName(current.getFullName())) {
-      return current;
-    }
-    return candidate.getId() != null && current.getId() != null && candidate.getId() > current.getId()
-        ? candidate
-        : current;
-  }
-
-  private boolean isPreferredDoctorName(String name) {
-    if (name == null) {
-      return false;
-    }
-    String normalized = name.trim();
-    return !normalized.regionMatches(true, 0, "Dr.", 0, 3)
-        && !normalized.regionMatches(true, 0, "Dr", 0, 2);
-  }
-
-  private void syncDoctorSafe(
-      String fullName,
-      String email,
-      String phone,
-      String specialty,
-      Department department,
-      String imageUrl) {
-    try {
-      syncDoctor(fullName, email, phone, specialty, department, imageUrl);
-    } catch (Exception ex) {
-      log.warn("Doctor sync skipped for {}: {}", fullName, ex.getMessage());
-    }
-  }
-
-  private void syncByNameContains(String part1, String part2, String email, String imageUrl) {
-    try {
-      doctorRepository.findAll().stream()
-          .filter(
-              d -> {
-                String name = d.getFullName() != null ? d.getFullName().toLowerCase() : "";
-                return name.contains(part1.toLowerCase()) && name.contains(part2.toLowerCase());
-              })
-          .forEach(
-              d -> {
-                d.setEmail(email.trim().toLowerCase());
-                d.setImageUrl(imageUrl);
-                doctorRepository.save(d);
-              });
-    } catch (Exception ex) {
-      log.warn("Name-based doctor sync failed for {} {}: {}", part1, part2, ex.getMessage());
-    }
-  }
-
-  private java.util.Optional<Doctor> findByName(String fullName) {
-    return doctorRepository.findAll().stream()
-        .filter(d -> fullName.equalsIgnoreCase(d.getFullName()))
-        .findFirst();
   }
 }

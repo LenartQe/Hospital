@@ -53,7 +53,7 @@ public class DoctorController {
     List<Doctor> doctors =
         all
             ? doctorRepository.findAll()
-            : DoctorCatalog.featuredDoctors(doctorRepository.findByFeaturedTrueOrderByNameAsc());
+            : DoctorCatalog.publicDoctors(doctorRepository.findByFeaturedTrueOrderByNameAsc());
     if (departmentId != null) {
       long deptId = Require.id(departmentId, "ID e departamentit");
       return doctors.stream()

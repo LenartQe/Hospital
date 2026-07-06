@@ -8,11 +8,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface DiagnosisRepository extends JpaRepository<Diagnosis, Long> {
-  List<Diagnosis> findByPatientIdOrderByCreatedAtDesc(Long patientId);
+  @Query("SELECT d FROM Diagnosis d WHERE d.patient.id = :patientId ORDER BY d.createdAt DESC")
+  List<Diagnosis> findByPatientIdOrderByCreatedAtDesc(@Param("patientId") Long patientId);
 
-  List<Diagnosis> findByDoctorIdOrderByCreatedAtDesc(Long doctorId);
+  @Query("SELECT d FROM Diagnosis d WHERE d.doctor.id = :doctorId ORDER BY d.createdAt DESC")
+  List<Diagnosis> findByDoctorIdOrderByCreatedAtDesc(@Param("doctorId") Long doctorId);
 
-  long countByDoctorId(Long doctorId);
+  @Query("SELECT COUNT(d) FROM Diagnosis d WHERE d.doctor.id = :doctorId")
+  long countByDoctorId(@Param("doctorId") Long doctorId);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("DELETE FROM Diagnosis d WHERE d.doctor.id = :doctorId")

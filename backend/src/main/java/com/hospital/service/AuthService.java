@@ -44,7 +44,7 @@ public class AuthService {
   }
 
   /** Open login: any email/password accepted; creates account if missing (except admin — single account). */
-  public AuthResult login(String email, String password, UserRole expectedRole) {
+  public AuthResult login(String email, String password, UserRole expectedRole, Long doctorId) {
     if (expectedRole == UserRole.ADMIN) {
       AppUser admin =
           appUserRepository
@@ -63,7 +63,7 @@ public class AuthService {
             .orElseGet(() -> createGuestUser(normalized, expectedRole));
 
     if (expectedRole == UserRole.DOCTOR) {
-      ensureDoctorLinked(user);
+      ensureDoctorLinked(user, doctorId);
     } else if (expectedRole == UserRole.PATIENT) {
       ensurePatientProfile(user);
     }
@@ -136,24 +136,56 @@ public class AuthService {
     }
   }
 
-  private void ensureDoctorLinked(AppUser user) {
-    if (doctorRepository.findByUserId(user.getId()).isPresent()) {
-      return;
-    }
-    Doctor doctor =
-        doctorRepository.findAll().stream()
-            .filter(d -> user.getEmail().equalsIgnoreCase(d.getEmail()))
-            .reduce(DoctorCatalog::preferDoctorRecord)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Ky email nuk është i regjistruar si mjek. Zgjidhni një email nga lista e mjekëve."));
-    doctor.setUserId(user.getId());
+  private void ensureDoctorLinked(AppUser user, Long doctorId) {
+    Doctor doctor = resolveDoctorForLogin(user, doctorId);
+    Long uid = user.getId();
+
+    doctorRepository.findAll().stream()
+        .filter(d -> d.getUserId() != null && d.getUserId().equals(uid) && !d.getId().equals(doctor.getId()))
+        .forEach(
+            previous -> {
+              previous.setUserId(null);
+              doctorRepository.save(previous);
+            });
+
+    doctorRepository.findAll().stream()
+        .filter(d -> user.getEmail().equalsIgnoreCase(d.getEmail()) && !d.getId().equals(doctor.getId()))
+        .forEach(
+            other -> {
+              other.setUserId(null);
+              doctorRepository.save(other);
+            });
+
+    doctor.setUserId(uid);
     if (doctor.getEmail() == null || doctor.getEmail().isBlank()) {
       doctor.setEmail(user.getEmail());
     }
     doctorRepository.save(doctor);
+  }
+
+  private Doctor resolveDoctorForLogin(AppUser user, Long doctorId) {
+    if (doctorId != null) {
+      Doctor byId =
+          doctorRepository
+              .findById(doctorId)
+              .orElseThrow(
+                  () ->
+                      new ResponseStatusException(
+                          HttpStatus.BAD_REQUEST, "Mjeku i zgjedhur nuk u gjet."));
+      if (byId.getEmail() == null || !user.getEmail().equalsIgnoreCase(byId.getEmail())) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Email-i nuk përputhet me mjekun e zgjedhur.");
+      }
+      return byId;
+    }
+    return doctorRepository.findAll().stream()
+        .filter(d -> user.getEmail().equalsIgnoreCase(d.getEmail()) && d.isFeatured())
+        .reduce(DoctorCatalog::preferDoctorRecord)
+        .orElseThrow(
+            () ->
+                new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Ky email nuk është i regjistruar si mjek. Zgjidhni një mjek nga lista."));
   }
 
   private AuthResult toAuthResult(AppUser user) {

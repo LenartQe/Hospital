@@ -1,7 +1,6 @@
 package com.hospital.controller;
 
 import com.hospital.config.AuthDataInitializer;
-import com.hospital.entity.Doctor;
 import com.hospital.entity.UserRole;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.service.AuthService;
@@ -9,7 +8,6 @@ import com.hospital.service.AuthService.AuthResult;
 import com.hospital.util.DoctorCatalog;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import java.util.Comparator;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,7 +29,7 @@ public class AuthController {
 
   @GetMapping("/doctor-emails")
   public List<DoctorLoginOption> doctorEmails() {
-    return DoctorCatalog.featuredDoctors(doctorRepository.findByFeaturedTrueOrderByNameAsc()).stream()
+    return DoctorCatalog.publicDoctors(doctorRepository.findByFeaturedTrueOrderByNameAsc()).stream()
         .map(
             d ->
                 new DoctorLoginOption(
@@ -47,7 +45,7 @@ public class AuthController {
   @PostMapping("/login")
   public AuthResult login(@RequestBody LoginRequest body) {
     UserRole role = UserRole.valueOf(body.role().toUpperCase());
-    return authService.login(body.email(), body.password(), role);
+    return authService.login(body.email(), body.password(), role, body.doctorId());
   }
 
   @PostMapping("/register/patient")
@@ -58,7 +56,8 @@ public class AuthController {
   public record LoginRequest(
       @NotBlank @Email String email,
       @NotBlank String password,
-      @NotBlank String role) {}
+      @NotBlank String role,
+      Long doctorId) {}
 
   public record RegisterPatientRequest(
       @NotBlank @Email String email,

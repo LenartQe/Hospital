@@ -10,7 +10,8 @@ public final class DoctorCatalog {
 
   private DoctorCatalog() {}
 
-  public static List<Doctor> featuredDoctors(List<Doctor> doctors) {
+  /** One public/login doctor per email — keeps the original Mjekët record (lowest id). */
+  public static List<Doctor> publicDoctors(List<Doctor> doctors) {
     Map<String, Doctor> byEmail = new LinkedHashMap<>();
     doctors.stream()
         .filter(d -> d.isFeatured() && d.getEmail() != null && !d.getEmail().isBlank())
@@ -26,23 +27,20 @@ public final class DoctorCatalog {
   }
 
   public static Doctor preferDoctorRecord(Doctor current, Doctor candidate) {
-    if (isPreferredDoctorName(candidate.getFullName()) && !isPreferredDoctorName(current.getFullName())) {
+    if (current.getId() == null) {
       return candidate;
     }
-    if (!isPreferredDoctorName(candidate.getFullName()) && isPreferredDoctorName(current.getFullName())) {
+    if (candidate.getId() == null) {
       return current;
     }
-    return candidate.getId() != null && current.getId() != null && candidate.getId() > current.getId()
-        ? candidate
-        : current;
+    return current.getId() < candidate.getId() ? current : candidate;
   }
 
-  public static boolean isPreferredDoctorName(String name) {
-    if (name == null) {
-      return false;
-    }
-    String normalized = name.trim();
-    return !normalized.regionMatches(true, 0, "Dr.", 0, 3)
-        && !normalized.regionMatches(true, 0, "Dr", 0, 2);
+  public static Doctor resolveByEmail(List<Doctor> doctors, String email) {
+    String normalized = email.trim().toLowerCase();
+    return doctors.stream()
+        .filter(d -> normalized.equalsIgnoreCase(d.getEmail()))
+        .reduce(DoctorCatalog::preferDoctorRecord)
+        .orElse(null);
   }
 }

@@ -42,6 +42,16 @@ public class MedicineHospitalDataSync implements CommandLineRunner {
     syncMedicine("PEDIATRICS", "Salbutamol Inhaler", "Bronkodilatator për astmë te fëmijët.", "inhalator", 400);
     syncMedicine("PEDIATRICS", "Vitamin Drops A+D", "Suplement për foshnjat.", "shishe", 600);
 
+    syncMedicine("NEUROLOGY", "Gabapentin 300mg", "Për neuropati dhe dhimbje nervore.", "kapsula", 1200);
+    syncMedicine("NEUROLOGY", "Sumatriptan 50mg", "Për migrenë akute.", "tableta", 800);
+    syncMedicine("NEUROLOGY", "Levetiracetam 500mg", "Antiepileptik.", "tableta", 950);
+    syncMedicine("NEUROLOGY", "Baclofen 10mg", "Relaksues i muskulit për spasticitet.", "tableta", 700);
+
+    syncMedicine("ONCOLOGY", "Tamoxifen 20mg", "Terapi hormonale onkologjike.", "tableta", 500);
+    syncMedicine("ONCOLOGY", "Ondansetron 8mg", "Antiemetik gjatë kemoterapisë.", "tableta", 600);
+    syncMedicine("ONCOLOGY", "Morphine Sulfate 10mg", "Analgjetik për dhimbje onkologjike.", "ampula", 300);
+    syncMedicine("ONCOLOGY", "Folic Acid 5mg", "Suplement gjatë trajtimit onkologjik.", "tableta", 900);
+
     log.debug("Medicine specialty sync completed.");
   }
 

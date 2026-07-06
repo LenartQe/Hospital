@@ -406,11 +406,22 @@ public class PortalService {
 
   private String resolveMedicineSpecialtyKey(Doctor doctor) {
     String specialty = doctor.getSpecialty() != null ? doctor.getSpecialty().toLowerCase() : "";
-    if (specialty.contains("kardiolog")) {
+    String department =
+        doctor.getDepartment() != null && doctor.getDepartment().getName() != null
+            ? doctor.getDepartment().getName().toLowerCase()
+            : "";
+    String combined = specialty + " " + department;
+    if (combined.contains("kardiolog") || combined.contains("arreste") || combined.contains("zemer")) {
       return "CARDIOLOGY";
     }
-    if (specialty.contains("pediatr")) {
+    if (combined.contains("pediatr") || combined.contains("fëmij") || combined.contains("femij")) {
       return "PEDIATRICS";
+    }
+    if (combined.contains("neurolog") || combined.contains("trur") || combined.contains("nervor")) {
+      return "NEUROLOGY";
+    }
+    if (combined.contains("onkolog") || combined.contains("kancer")) {
+      return "ONCOLOGY";
     }
     return "GENERAL";
   }

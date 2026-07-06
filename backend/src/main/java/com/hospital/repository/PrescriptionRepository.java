@@ -8,11 +8,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PrescriptionRepository extends JpaRepository<Prescription, Long> {
-  List<Prescription> findByPatientIdOrderByPrescribedAtDesc(Long patientId);
+  @Query("SELECT p FROM Prescription p WHERE p.patient.id = :patientId ORDER BY p.prescribedAt DESC")
+  List<Prescription> findByPatientIdOrderByPrescribedAtDesc(@Param("patientId") Long patientId);
 
-  List<Prescription> findByDoctorIdOrderByPrescribedAtDesc(Long doctorId);
+  @Query("SELECT p FROM Prescription p WHERE p.doctor.id = :doctorId ORDER BY p.prescribedAt DESC")
+  List<Prescription> findByDoctorIdOrderByPrescribedAtDesc(@Param("doctorId") Long doctorId);
 
-  long countByDoctorId(Long doctorId);
+  @Query("SELECT COUNT(p) FROM Prescription p WHERE p.doctor.id = :doctorId")
+  long countByDoctorId(@Param("doctorId") Long doctorId);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("DELETE FROM Prescription p WHERE p.doctor.id = :doctorId")
