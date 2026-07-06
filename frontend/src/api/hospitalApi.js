@@ -65,6 +65,7 @@ export const hospitalApi = {
     login: (body) => request("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
     registerPatient: (body) =>
       request("/api/auth/register/patient", { method: "POST", body: JSON.stringify(body) }),
+    doctorEmails: () => request("/api/auth/doctor-emails"),
   },
   patient: {
     dashboard: () => request("/api/patient/dashboard"),

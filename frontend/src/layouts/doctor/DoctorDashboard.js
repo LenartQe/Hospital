@@ -10,7 +10,7 @@ import {
   Clock,
   ArrowRight,
 } from "lucide-react";
-import { hospitalApi } from "api/hospitalApi";
+import { hospitalApi, parseApiError } from "api/hospitalApi";
 import DoctorPortalLayout from "./DoctorPortalLayout";
 import PageHeader from "./components/PageHeader";
 import StatusBadge from "./components/StatusBadge";
@@ -81,7 +81,7 @@ export default function DoctorDashboard() {
     hospitalApi.doctor
       .dashboard()
       .then(setData)
-      .catch((e) => setError(String(e.message)))
+      .catch((e) => setError(parseApiError(e)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -93,7 +93,7 @@ export default function DoctorDashboard() {
         title="Paneli i mjekut"
         subtitle={
           doctor
-            ? `${doctor.fullName} · ${doctor.specialty || ""} · ${doctor.department?.name || ""}`
+            ? `${doctor.fullName} · ${doctor.specialty || ""} · ${doctor.departmentName || doctor.department?.name || ""}`
             : "Mirë se vini"
         }
         icon={LayoutDashboard}

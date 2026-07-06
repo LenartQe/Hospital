@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Mail, Phone, Check, X } from "lucide-react";
-import { hospitalApi } from "api/hospitalApi";
+import { useNavigate } from "react-router-dom";
+import { CalendarDays, Mail, Phone, Check, X, User } from "lucide-react";
+import { hospitalApi, parseApiError } from "api/hospitalApi";
 import DoctorPortalLayout from "./DoctorPortalLayout";
 import PageHeader from "./components/PageHeader";
 import StatusBadge from "./components/StatusBadge";
@@ -9,6 +10,7 @@ import PatientAvatar from "./components/PatientAvatar";
 import PrimaryButton from "./components/PrimaryButton";
 
 export default function DoctorAppointments() {
+  const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -18,7 +20,7 @@ export default function DoctorAppointments() {
     hospitalApi.doctor
       .appointments()
       .then(setRows)
-      .catch((e) => setError(String(e.message)))
+      .catch((e) => setError(parseApiError(e)))
       .finally(() => setLoading(false));
   };
 
@@ -30,7 +32,12 @@ export default function DoctorAppointments() {
     hospitalApi.doctor
       .updateAppointmentStatus(id, status)
       .then(load)
-      .catch((e) => setError(String(e.message)));
+      .catch((e) => setError(parseApiError(e)));
+  };
+
+  const openPatient = (patientId) => {
+    if (!patientId) return;
+    navigate(`/doctor/patients?patientId=${patientId}`);
   };
 
   return (
@@ -95,7 +102,17 @@ export default function DoctorAppointments() {
                   ) : null}
                 </div>
                 {(r.status === "PENDING" || r.status === "CONFIRMED") && (
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    {r.patientId ? (
+                      <PrimaryButton
+                        variant="ghost"
+                        className="flex-1 text-xs"
+                        onClick={() => openPatient(r.patientId)}
+                      >
+                        <User size={14} />
+                        Shiko pacientin
+                      </PrimaryButton>
+                    ) : null}
                     {r.status === "PENDING" ? (
                       <PrimaryButton
                         variant="success"
@@ -154,6 +171,16 @@ export default function DoctorAppointments() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex gap-2">
+                        {r.patientId ? (
+                          <PrimaryButton
+                            variant="ghost"
+                            className="!px-3 !py-1.5 text-xs"
+                            onClick={() => openPatient(r.patientId)}
+                          >
+                            <User size={14} />
+                            Pacienti
+                          </PrimaryButton>
+                        ) : null}
                         {r.status === "PENDING" ? (
                           <PrimaryButton
                             variant="success"

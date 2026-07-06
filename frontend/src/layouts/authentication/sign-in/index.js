@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Card from "@mui/material/Card";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
+import MenuItem from "@mui/material/MenuItem";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 import HospitalAuthLayout from "layouts/authentication/components/HospitalAuthLayout";
-import { hospitalApi } from "api/hospitalApi";
+import { hospitalApi, parseApiError } from "api/hospitalApi";
 import { setAuth, homeRouteForRole } from "auth/authStorage";
 
 const ROLES = [
@@ -29,30 +30,49 @@ export default function SignIn() {
   const [role, setRole] = useState(roleFromQuery(searchParams.get("role")));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [doctorOptions, setDoctorOptions] = useState([]);
+  const [doctorEmail, setDoctorEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const roleIndex = ROLES.findIndex((r) => r.key === role);
 
+  useEffect(() => {
+    if (role !== "DOCTOR") {
+      return;
+    }
+    hospitalApi.auth
+      .doctorEmails()
+      .then((list) => {
+        setDoctorOptions(list);
+        if (list.length) {
+          setDoctorEmail((prev) => prev || list[0].email);
+        }
+      })
+      .catch(() => setDoctorOptions([]));
+  }, [role]);
+
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
+    const loginEmail =
+      role === "DOCTOR" ? doctorEmail || email.trim() : email.trim() || "guest@hospital.local";
+    if (role === "DOCTOR" && !loginEmail) {
+      setError("Zgjidhni emailin e mjekut nga lista.");
+      setLoading(false);
+      return;
+    }
     try {
       const data = await hospitalApi.auth.login({
-        email: email.trim() || "guest@hospital.local",
+        email: loginEmail,
         password: password || "guest",
         role,
       });
       setAuth(data);
       navigate(homeRouteForRole(data.role));
     } catch (err) {
-      try {
-        const parsed = JSON.parse(err.message);
-        setError(parsed.message || "Hyrja dështoi.");
-      } catch {
-        setError(err.message || "Hyrja dështoi.");
-      }
+      setError(parseApiError(err));
     } finally {
       setLoading(false);
     }
@@ -76,16 +96,48 @@ export default function SignIn() {
         </Tabs>
 
         <MDBox component="form" onSubmit={handleSignIn}>
-          <MDBox mb={2}>
-            <MDInput
-              type="text"
-              label="Email (opsional)"
-              fullWidth
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="çfarëdo@email.com"
-            />
-          </MDBox>
+          {role === "DOCTOR" ? (
+            <MDBox mb={2}>
+              <MDTypography variant="caption" color="text" display="block" mb={0.5}>
+                Cilin email dëshironi të përdorni për hyrjen si mjek?
+              </MDTypography>
+              {doctorOptions.length ? (
+                <MDInput
+                  select
+                  fullWidth
+                  value={doctorEmail}
+                  onChange={(e) => setDoctorEmail(e.target.value)}
+                  label="Email i mjekut"
+                >
+                  {doctorOptions.map((d) => (
+                    <MenuItem key={d.id} value={d.email}>
+                      {d.fullName} — {d.email}
+                    </MenuItem>
+                  ))}
+                </MDInput>
+              ) : (
+                <MDInput
+                  type="email"
+                  label="Email i mjekut"
+                  fullWidth
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@spitaliprizrenit.com"
+                />
+              )}
+            </MDBox>
+          ) : (
+            <MDBox mb={2}>
+              <MDInput
+                type="text"
+                label="Email (opsional)"
+                fullWidth
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="çfarëdo@email.com"
+              />
+            </MDBox>
+          )}
           <MDBox mb={2}>
             <MDInput
               type="password"
@@ -127,6 +179,15 @@ export default function SignIn() {
           <MDBox mt={2}>
             <MDTypography variant="caption" color="text">
               Hyrja e administrimit lidhet me llogarinë kryesore të faqes (një administrator).
+            </MDTypography>
+          </MDBox>
+        ) : null}
+
+        {role === "DOCTOR" && doctorOptions.length ? (
+          <MDBox mt={2}>
+            <MDTypography variant="caption" color="text">
+              Lista përmban email-et e mjekëve të regjistruar në sistem. Zgjidhni profilin tuaj për të
+              hyrë në portalin e mjekut.
             </MDTypography>
           </MDBox>
         ) : null}

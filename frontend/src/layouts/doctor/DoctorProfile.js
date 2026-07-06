@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { UserCircle, Stethoscope, Mail, Phone, Building2, Pencil } from "lucide-react";
-import { hospitalApi } from "api/hospitalApi";
+import { hospitalApi, parseApiError } from "api/hospitalApi";
 import DoctorPortalLayout from "./DoctorPortalLayout";
 import PageHeader from "./components/PageHeader";
 import PatientAvatar from "./components/PatientAvatar";
@@ -18,7 +18,7 @@ export default function DoctorProfile() {
     hospitalApi.doctor
       .profile()
       .then(setDoc)
-      .catch((e) => setError(String(e.message)))
+      .catch((e) => setError(parseApiError(e)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -64,10 +64,10 @@ export default function DoctorProfile() {
 
             {/* Info column */}
             <div className="p-8 lg:col-span-2">
-              {doc.department?.name ? (
+              {doc.departmentName || doc.department?.name ? (
                 <div className="mb-6 inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700">
                   <Building2 size={16} />
-                  {doc.department.name}
+                  {doc.departmentName || doc.department?.name}
                 </div>
               ) : null}
 

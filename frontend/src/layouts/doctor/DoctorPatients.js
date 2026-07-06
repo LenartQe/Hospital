@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Users, Activity, Pill } from "lucide-react";
-import { hospitalApi } from "api/hospitalApi";
+import { hospitalApi, parseApiError } from "api/hospitalApi";
 import DoctorPortalLayout from "./DoctorPortalLayout";
 import PageHeader from "./components/PageHeader";
 import MedicalCard from "./components/MedicalCard";
@@ -9,6 +10,7 @@ import PrimaryButton from "./components/PrimaryButton";
 import FormField from "./components/FormField";
 
 export default function DoctorPatients() {
+  const [searchParams] = useSearchParams();
   const [patients, setPatients] = useState([]);
   const [medicines, setMedicines] = useState([]);
   const [patientId, setPatientId] = useState("");
@@ -24,7 +26,7 @@ export default function DoctorPatients() {
     hospitalApi.doctor
       .patients()
       .then(setPatients)
-      .catch((e) => setError(String(e.message)));
+      .catch((e) => setError(parseApiError(e)));
     hospitalApi.medicines
       .list()
       .then(setMedicines)
@@ -34,6 +36,19 @@ export default function DoctorPatients() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    const fromQuery = searchParams.get("patientId");
+    if (fromQuery) {
+      setPatientId(fromQuery);
+    }
+  }, [searchParams]);
+
+  const selectPatient = (id) => {
+    setPatientId(String(id));
+    setMsg(`Pacienti u zgjodh. Mund të shtoni diagnozë ose recetë.`);
+    setError("");
+  };
 
   const submitDiagnosis = () => {
     if (!patientId || !dxTitle) return;
@@ -45,7 +60,7 @@ export default function DoctorPatients() {
         setDxDesc("");
         setError("");
       })
-      .catch((e) => setError(String(e.message)));
+      .catch((e) => setError(parseApiError(e)));
   };
 
   const submitPrescription = () => {
@@ -63,8 +78,10 @@ export default function DoctorPatients() {
         setFrequency("");
         setError("");
       })
-      .catch((e) => setError(String(e.message)));
+      .catch((e) => setError(parseApiError(e)));
   };
+
+  const selectedPatient = patients.find((p) => String(p.id) === String(patientId));
 
   const patientOptions = [
     { value: "", label: "Zgjidhni pacientin..." },
@@ -80,7 +97,7 @@ export default function DoctorPatients() {
     <DoctorPortalLayout pageTitle="Pacientët">
       <PageHeader
         title="Pacientët"
-        subtitle="Zgjidhni pacientin dhe shtoni diagnoza ose receta"
+        subtitle="Pacientët që kanë rezervuar termin me ju — klikoni për të zgjedhur"
         icon={Users}
       />
 
@@ -95,22 +112,30 @@ export default function DoctorPatients() {
         </div>
       ) : null}
 
+      {selectedPatient ? (
+        <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          Pacienti i zgjedhur: <strong>{selectedPatient.fullName}</strong>
+          {selectedPatient.email ? ` (${selectedPatient.email})` : ""}
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-5">
-        {/* Patient list */}
         <div className="lg:col-span-2">
-          <MedicalCard title="Lista e pacientëve" icon={Users}>
+          <MedicalCard title="Pacientët e mi (nga terminet)" icon={Users}>
             <div className="max-h-[32rem] space-y-2 overflow-y-auto pr-1">
               {patients.length === 0 ? (
                 <p className="py-8 text-center text-sm text-slate-500">
-                  Nuk ka pacientë të regjistruar.
+                  Nuk ka pacientë me termine të regjistruara për ju ende.
                 </p>
               ) : (
                 patients.map((p) => {
                   const selected = String(patientId) === String(p.id);
                   return (
-                    <div
+                    <button
                       key={p.id}
-                      className={`flex items-center gap-3 rounded-xl border p-3 transition-all duration-200 ${
+                      type="button"
+                      onClick={() => selectPatient(p.id)}
+                      className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all duration-200 ${
                         selected
                           ? "border-blue-300 bg-blue-50 ring-2 ring-blue-500/30"
                           : "border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-white"
@@ -125,14 +150,14 @@ export default function DoctorPatients() {
                           </span>
                         ) : null}
                       </div>
-                      <PrimaryButton
-                        variant={selected ? "primary" : "ghost"}
-                        className="!px-3 !py-1.5 text-xs"
-                        onClick={() => setPatientId(String(p.id))}
+                      <span
+                        className={`rounded-lg px-2 py-1 text-xs font-semibold ${
+                          selected ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-600"
+                        }`}
                       >
-                        Zgjidh
-                      </PrimaryButton>
-                    </div>
+                        {selected ? "Zgjedhur" : "Zgjidh"}
+                      </span>
+                    </button>
                   );
                 })
               )}
@@ -140,7 +165,6 @@ export default function DoctorPatients() {
           </MedicalCard>
         </div>
 
-        {/* Forms */}
         <div className="space-y-6 lg:col-span-3">
           <MedicalCard title="Shto diagnozë" icon={Activity}>
             <FormField
@@ -164,7 +188,9 @@ export default function DoctorPatients() {
               placeholder="Përshkrimi i detajuar i diagnozës..."
               rows={4}
             />
-            <PrimaryButton onClick={submitDiagnosis}>RUAJ DIAGNOZË</PrimaryButton>
+            <PrimaryButton onClick={submitDiagnosis} disabled={!patientId || !dxTitle}>
+              RUAJ DIAGNOZË
+            </PrimaryButton>
           </MedicalCard>
 
           <MedicalCard title="Përshkruaj barnë" icon={Pill}>
@@ -187,7 +213,11 @@ export default function DoctorPatients() {
               onChange={(e) => setFrequency(e.target.value)}
               placeholder="p.sh. 2 herë në ditë"
             />
-            <PrimaryButton variant="success" onClick={submitPrescription}>
+            <PrimaryButton
+              variant="success"
+              onClick={submitPrescription}
+              disabled={!patientId || !medId || !dosage}
+            >
               RUAJ RECETËN
             </PrimaryButton>
           </MedicalCard>

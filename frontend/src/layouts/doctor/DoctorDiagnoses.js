@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Activity, Calendar, User } from "lucide-react";
-import { hospitalApi } from "api/hospitalApi";
+import { hospitalApi, parseApiError } from "api/hospitalApi";
 import DoctorPortalLayout from "./DoctorPortalLayout";
 import PageHeader from "./components/PageHeader";
 import EmptyState from "./components/EmptyState";
@@ -23,7 +23,7 @@ export default function DoctorDiagnoses() {
     hospitalApi.doctor
       .diagnoses()
       .then(setRows)
-      .catch((e) => setError(String(e.message)))
+      .catch((e) => setError(parseApiError(e)))
       .finally(() => setLoading(false));
   }, []);
 
