@@ -27,8 +27,8 @@ export default function DoctorPatients() {
       .patients()
       .then(setPatients)
       .catch((e) => setError(parseApiError(e)));
-    hospitalApi.medicines
-      .list()
+    hospitalApi.doctor
+      .medicines()
       .then(setMedicines)
       .catch(() => {});
   };

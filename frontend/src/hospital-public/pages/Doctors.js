@@ -39,7 +39,15 @@ export default function Doctors() {
             <div key={doc.id} className="col-lg-4 col-sm-6 col-md-6 mb-4">
               <div className="doctor-block">
                 <div className="content text-center">
-                  <h4 className="mt-4 mb-0">
+                  {doc.imageUrl ? (
+                    <img
+                      src={doc.imageUrl}
+                      alt={doc.fullName}
+                      className="rounded-circle mb-3"
+                      style={{ width: 120, height: 120, objectFit: "cover" }}
+                    />
+                  ) : null}
+                  <h4 className="mt-2 mb-0">
                     <Link to={`/doctors/${doc.id}`} className="text-dark">
                       {doc.fullName}
                     </Link>

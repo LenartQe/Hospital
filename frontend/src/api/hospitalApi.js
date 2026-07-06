@@ -81,6 +81,7 @@ export const hospitalApi = {
     diagnoses: () => request("/api/doctor/diagnoses"),
     prescriptions: () => request("/api/doctor/prescriptions"),
     profile: () => request("/api/doctor/profile"),
+    medicines: () => request("/api/doctor/medicines"),
     patients: () => request("/api/doctor/patients"),
     addDiagnosis: (patientId, body) =>
       request(`/api/doctor/patients/${patientId}/diagnoses`, {
@@ -106,6 +107,11 @@ export const hospitalApi = {
     list: (departmentId) => {
       const q = departmentId != null ? `?departmentId=${departmentId}` : "";
       return request(`/api/doctors${q}`);
+    },
+    listAll: (departmentId) => {
+      const params = new URLSearchParams({ all: "true" });
+      if (departmentId != null) params.set("departmentId", String(departmentId));
+      return request(`/api/doctors?${params.toString()}`);
     },
     get: (id) => request(`/api/doctors/${id}`),
     create: (body) => request("/api/doctors", { method: "POST", body: JSON.stringify(body) }),

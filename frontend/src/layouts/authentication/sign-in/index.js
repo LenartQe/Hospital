@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Card from "@mui/material/Card";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import MenuItem from "@mui/material/MenuItem";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
@@ -18,6 +17,9 @@ const ROLES = [
   { key: "ADMIN", label: "Administrim web" },
 ];
 
+const DOCTOR_PLACEHOLDER =
+  "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face";
+
 function roleFromQuery(param) {
   if (param === "doctor") return "DOCTOR";
   if (param === "admin") return "ADMIN";
@@ -31,11 +33,12 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [doctorOptions, setDoctorOptions] = useState([]);
-  const [doctorEmail, setDoctorEmail] = useState("");
+  const [selectedDoctorId, setSelectedDoctorId] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const roleIndex = ROLES.findIndex((r) => r.key === role);
+  const selectedDoctor = doctorOptions.find((d) => d.id === selectedDoctorId) || null;
 
   useEffect(() => {
     if (role !== "DOCTOR") {
@@ -46,27 +49,34 @@ export default function SignIn() {
       .then((list) => {
         setDoctorOptions(list);
         if (list.length) {
-          setDoctorEmail((prev) => prev || list[0].email);
+          selectDoctor(list[0]);
         }
       })
       .catch(() => setDoctorOptions([]));
   }, [role]);
+
+  const selectDoctor = (doctor) => {
+    setSelectedDoctorId(doctor.id);
+    setEmail(doctor.email);
+    setPassword(doctor.password || "hospital123");
+    setError("");
+  };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     const loginEmail =
-      role === "DOCTOR" ? doctorEmail || email.trim() : email.trim() || "guest@hospital.local";
+      role === "DOCTOR" ? email.trim() : email.trim() || "guest@hospital.local";
     if (role === "DOCTOR" && !loginEmail) {
-      setError("Zgjidhni emailin e mjekut nga lista.");
+      setError("Zgjidhni mjekun nga lista.");
       setLoading(false);
       return;
     }
     try {
       const data = await hospitalApi.auth.login({
         email: loginEmail,
-        password: password || "guest",
+        password: password || "hospital123",
         role,
       });
       setAuth(data);
@@ -81,7 +91,7 @@ export default function SignIn() {
   return (
     <HospitalAuthLayout
       title="Hyrja në sistem"
-      subtitle="Çdo email dhe fjalëkalim pranohen. Administrimi web është vetëm për menaxhimin e faqes."
+      subtitle="Zgjidhni rolin tuaj dhe identifikohuni në portal."
     >
       <Card sx={{ p: 3, boxShadow: "0 8px 32px rgba(34,58,102,0.12)" }}>
         <Tabs
@@ -97,63 +107,165 @@ export default function SignIn() {
 
         <MDBox component="form" onSubmit={handleSignIn}>
           {role === "DOCTOR" ? (
-            <MDBox mb={2}>
-              <MDTypography variant="caption" color="text" display="block" mb={0.5}>
-                Cilin email dëshironi të përdorni për hyrjen si mjek?
+            <MDBox mb={3}>
+              <MDTypography variant="button" fontWeight="medium" display="block" mb={1.5}>
+                Zgjidhni mjekun (si në faqen Mjekët)
               </MDTypography>
-              {doctorOptions.length ? (
-                <MDInput
-                  select
-                  fullWidth
-                  value={doctorEmail}
-                  onChange={(e) => setDoctorEmail(e.target.value)}
-                  label="Email i mjekut"
+              <MDBox
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1.5,
+                  maxHeight: 320,
+                  overflowY: "auto",
+                  pr: 0.5,
+                }}
+              >
+                {doctorOptions.length ? (
+                  doctorOptions.map((doctor) => {
+                    const active = selectedDoctorId === doctor.id;
+                    return (
+                      <MDBox
+                        key={doctor.id}
+                        onClick={() => selectDoctor(doctor)}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          p: 2,
+                          borderRadius: "14px",
+                          border: "2px solid",
+                          borderColor: active ? "#1A73E8" : "#E2E8F0",
+                          backgroundColor: active ? "rgba(26,115,232,0.06)" : "#F8FAFC",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            borderColor: "#1A73E8",
+                            backgroundColor: "rgba(26,115,232,0.04)",
+                          },
+                        }}
+                      >
+                        <MDBox
+                          component="img"
+                          src={doctor.imageUrl || DOCTOR_PLACEHOLDER}
+                          alt={doctor.fullName}
+                          sx={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                            border: "2px solid #fff",
+                            boxShadow: "0 4px 12px rgba(15,23,42,0.12)",
+                            flexShrink: 0,
+                          }}
+                        />
+                        <MDBox sx={{ flex: 1, minWidth: 0 }}>
+                          <MDTypography variant="h6" fontWeight="bold" sx={{ lineHeight: 1.3 }}>
+                            {doctor.fullName}
+                          </MDTypography>
+                          <MDTypography variant="button" color="text" display="block" mt={0.25}>
+                            {doctor.specialty || "Mjek"}
+                          </MDTypography>
+                          <MDTypography
+                            variant="caption"
+                            color="text"
+                            display="block"
+                            mt={0.75}
+                            sx={{ fontSize: "0.85rem" }}
+                          >
+                            {doctor.email}
+                          </MDTypography>
+                        </MDBox>
+                      </MDBox>
+                    );
+                  })
+                ) : (
+                  <MDTypography variant="caption" color="text">
+                    Nuk u ngarkuan mjekët. Kontrolloni backend-in.
+                  </MDTypography>
+                )}
+              </MDBox>
+
+              {selectedDoctor ? (
+                <MDBox
+                  mt={2}
+                  p={2}
+                  sx={{
+                    borderRadius: "12px",
+                    backgroundColor: "#EFF6FF",
+                    border: "1px solid #BFDBFE",
+                  }}
                 >
-                  {doctorOptions.map((d) => (
-                    <MenuItem key={d.id} value={d.email}>
-                      {d.fullName} — {d.email}
-                    </MenuItem>
-                  ))}
-                </MDInput>
-              ) : (
+                  <MDTypography variant="caption" color="text" display="block" mb={1}>
+                    Kredencialet për <strong>{selectedDoctor.fullName}</strong>
+                  </MDTypography>
+                  <MDBox mb={1.5}>
+                    <MDInput
+                      type="email"
+                      label="Email"
+                      fullWidth
+                      value={email}
+                      InputProps={{ readOnly: true }}
+                      sx={{
+                        "& .MuiInputBase-root": { minHeight: 52, fontSize: "1rem" },
+                      }}
+                    />
+                  </MDBox>
+                  <MDBox>
+                    <MDInput
+                      type="text"
+                      label="Fjalëkalimi"
+                      fullWidth
+                      value={password}
+                      InputProps={{ readOnly: true }}
+                      sx={{
+                        "& .MuiInputBase-root": { minHeight: 52, fontSize: "1rem" },
+                      }}
+                    />
+                  </MDBox>
+                </MDBox>
+              ) : null}
+            </MDBox>
+          ) : (
+            <>
+              <MDBox mb={2}>
                 <MDInput
-                  type="email"
-                  label="Email i mjekut"
+                  type="text"
+                  label="Email (opsional)"
                   fullWidth
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="email@spitaliprizrenit.com"
+                  placeholder="çfarëdo@email.com"
+                  sx={{ "& .MuiInputBase-root": { minHeight: 48 } }}
                 />
-              )}
-            </MDBox>
-          ) : (
-            <MDBox mb={2}>
-              <MDInput
-                type="text"
-                label="Email (opsional)"
-                fullWidth
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="çfarëdo@email.com"
-              />
-            </MDBox>
+              </MDBox>
+              <MDBox mb={2}>
+                <MDInput
+                  type="password"
+                  label="Fjalëkalimi (opsional)"
+                  fullWidth
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="çfarëdo"
+                  sx={{ "& .MuiInputBase-root": { minHeight: 48 } }}
+                />
+              </MDBox>
+            </>
           )}
-          <MDBox mb={2}>
-            <MDInput
-              type="password"
-              label="Fjalëkalimi (opsional)"
-              fullWidth
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="çfarëdo"
-            />
-          </MDBox>
+
           {error ? (
             <MDTypography variant="caption" color="error" display="block" mb={1}>
               {error}
             </MDTypography>
           ) : null}
-          <MDButton type="submit" variant="gradient" color="info" fullWidth disabled={loading}>
+          <MDButton
+            type="submit"
+            variant="gradient"
+            color="info"
+            fullWidth
+            disabled={loading || (role === "DOCTOR" && !selectedDoctor)}
+            sx={{ py: 1.2, fontSize: "0.95rem" }}
+          >
             {loading ? "Duke u identifikuar…" : "Hyr"}
           </MDButton>
         </MDBox>
@@ -179,15 +291,6 @@ export default function SignIn() {
           <MDBox mt={2}>
             <MDTypography variant="caption" color="text">
               Hyrja e administrimit lidhet me llogarinë kryesore të faqes (një administrator).
-            </MDTypography>
-          </MDBox>
-        ) : null}
-
-        {role === "DOCTOR" && doctorOptions.length ? (
-          <MDBox mt={2}>
-            <MDTypography variant="caption" color="text">
-              Lista përmban email-et e mjekëve të regjistruar në sistem. Zgjidhni profilin tuaj për të
-              hyrë në portalin e mjekut.
             </MDTypography>
           </MDBox>
         ) : null}

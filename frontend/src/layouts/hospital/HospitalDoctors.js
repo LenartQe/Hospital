@@ -44,7 +44,7 @@ export default function HospitalDoctors() {
 
   const load = () =>
     hospitalApi.doctors
-      .list()
+      .listAll()
       .then(setRows)
       .catch((e) => setError(parseApiError(e)));
 
