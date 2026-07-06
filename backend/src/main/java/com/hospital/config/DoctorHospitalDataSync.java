@@ -24,12 +24,18 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
 
   private static final Logger log = LoggerFactory.getLogger(DoctorHospitalDataSync.class);
 
-  private static final String MALE_DOCTOR_IMG =
-      "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face";
-  private static final String FEMALE_DOCTOR_IMG =
+  private static final String LENART_IMG =
+      "https://images.unsplash.com/photo-1622253692010-21aabed25171?w=400&h=400&fit=crop&crop=face";
+  private static final String MIMOZA_IMG =
       "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face";
-  private static final String FEMALE_DOCTOR_IMG_ALT =
+  private static final String SARA_IMG =
       "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop&crop=face";
+
+  private static final java.util.Set<String> FEATURED_EMAILS =
+      java.util.Set.of(
+          "lenartqollaku@gmail.com",
+          "mimoza.kusari@spitaliprizrenit.com",
+          "sara.kryeziu@spitaliprizrenit.com");
 
   private final DepartmentRepository departmentRepository;
   private final DoctorRepository doctorRepository;
@@ -59,26 +65,42 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
         "+383 44 200 001",
         "Mjek i përgjithshëm",
         general,
-        MALE_DOCTOR_IMG);
+        LENART_IMG);
     syncDoctorSafe(
         "Mimoza Kusari",
         "mimoza.kusari@spitaliprizrenit.com",
         "+383 44 200 002",
         "Kardiologe",
         cardiology,
-        FEMALE_DOCTOR_IMG);
+        MIMOZA_IMG);
     syncDoctorSafe(
         "Sara Kryeziu",
         "sara.kryeziu@spitaliprizrenit.com",
         "+383 44 200 003",
         "Pediatre",
         pediatrics,
-        FEMALE_DOCTOR_IMG_ALT);
+        SARA_IMG);
 
-    // Also update by partial name for records created manually in admin with variant spellings.
-    syncByNameContains("mimoza", "kusari", "mimoza.kusari@spitaliprizrenit.com", FEMALE_DOCTOR_IMG);
-    syncByNameContains("sara", "kryeziu", "sara.kryeziu@spitaliprizrenit.com", FEMALE_DOCTOR_IMG_ALT);
-    syncByNameContains("lenart", "qollaku", "lenartqollaku@gmail.com", MALE_DOCTOR_IMG);
+    syncByNameContains("mimoza", "kusari", "mimoza.kusari@spitaliprizrenit.com", MIMOZA_IMG);
+    syncByNameContains("sara", "kryeziu", "sara.kryeziu@spitaliprizrenit.com", SARA_IMG);
+    syncByNameContains("lenart", "qollaku", "lenartqollaku@gmail.com", LENART_IMG);
+
+    applyFeaturedFlags();
+  }
+
+  private void applyFeaturedFlags() {
+    doctorRepository
+        .findAll()
+        .forEach(
+            doctor -> {
+              boolean featured =
+                  doctor.getEmail() != null
+                      && FEATURED_EMAILS.contains(doctor.getEmail().trim().toLowerCase());
+              if (doctor.isFeatured() != featured) {
+                doctor.setFeatured(featured);
+                doctorRepository.save(doctor);
+              }
+            });
   }
 
   private Department ensureDepartment(String name, String description) {
@@ -120,6 +142,8 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
     doctor.setSpecialty(specialty);
     doctor.setDepartment(department);
     doctor.setImageUrl(imageUrl);
+    doctor.setFeatured(
+        email != null && FEATURED_EMAILS.contains(normalizedEmail));
     if (doctor.getBio() == null || doctor.getBio().isBlank()) {
       doctor.setBio("Mjek në Spitalin e Prizrenit.");
     }
@@ -144,6 +168,8 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
       user.setPhone(phone);
       appUserRepository.save(user);
     }
+    user.setPasswordHash(passwordEncoder.encode(AuthDataInitializer.DEMO_PASSWORD));
+    appUserRepository.save(user);
 
     linkDoctorAccount(doctor, user);
 

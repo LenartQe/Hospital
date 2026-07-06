@@ -221,6 +221,12 @@ public class PortalService {
     return toDoctorProfileDto(requireDoctorByUserId(userId));
   }
 
+  @Transactional(readOnly = true)
+  public List<Medicine> medicinesForDoctor(Long userId) {
+    Doctor doctor = requireDoctorByUserId(userId);
+    return medicineRepository.findBySpecialtyKeyOrderByNameAsc(resolveMedicineSpecialtyKey(doctor));
+  }
+
   public List<Patient> listPatientsForDoctor(Long userId) {
     Doctor doctor = requireDoctorByUserId(userId);
     Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
@@ -299,6 +305,12 @@ public class PortalService {
         medicineRepository
             .findById(medId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barna nuk u gjet."));
+    String doctorKey = resolveMedicineSpecialtyKey(doctor);
+    if (medicine.getSpecialtyKey() != null
+        && !doctorKey.equalsIgnoreCase(medicine.getSpecialtyKey())) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Kjo barë nuk i përket specialitetit tuaj.");
+    }
     Prescription p = new Prescription();
     p.setDoctor(doctor);
     p.setPatient(patient);
@@ -332,12 +344,7 @@ public class PortalService {
     boolean linked =
         appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId).stream()
             .anyMatch(
-                a ->
-                    (a.getPatient() != null
-                            && patientId.equals(a.getPatient().getId()))
-                        || (a.getEmail() != null
-                            && patient.getEmail() != null
-                            && a.getEmail().equalsIgnoreCase(patient.getEmail())));
+                a -> a.getPatient() != null && patientId.equals(a.getPatient().getId()));
     if (!linked) {
       throw new ResponseStatusException(
           HttpStatus.FORBIDDEN, "Ky pacient nuk ka termin me këtë mjek.");
@@ -395,6 +402,17 @@ public class PortalService {
 
   private String safeText(String value, String fallback) {
     return value != null && !value.isBlank() ? value : fallback;
+  }
+
+  private String resolveMedicineSpecialtyKey(Doctor doctor) {
+    String specialty = doctor.getSpecialty() != null ? doctor.getSpecialty().toLowerCase() : "";
+    if (specialty.contains("kardiolog")) {
+      return "CARDIOLOGY";
+    }
+    if (specialty.contains("pediatr")) {
+      return "PEDIATRICS";
+    }
+    return "GENERAL";
   }
 
   private Patient resolvePatient(PatientProfile profile, AppUser user) {

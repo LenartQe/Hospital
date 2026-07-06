@@ -59,6 +59,10 @@ public class Doctor {
   @Column(name = "user_id", unique = true)
   private Long userId;
 
+  /** Shown on the public Mjekët page and doctor login picker. */
+  @Column(name = "featured", nullable = false)
+  private boolean featured = false;
+
   @Column(name = "created_at")
   private Instant createdAt = Instant.now();
 

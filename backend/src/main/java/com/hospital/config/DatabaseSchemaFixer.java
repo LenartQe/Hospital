@@ -24,6 +24,26 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
   public void run(String... args) {
     alterNullable("doctors", "department_id");
     alterNullable("appointments", "doctor_id");
+    addColumnIfMissing("doctors", "featured", "TINYINT(1) NOT NULL DEFAULT 0");
+    addColumnIfMissing("medicines", "specialty_key", "VARCHAR(50) NULL");
+  }
+
+  private void addColumnIfMissing(String table, String column, String definition) {
+    try {
+      Integer count =
+          jdbcTemplate.queryForObject(
+              "SELECT COUNT(*) FROM information_schema.COLUMNS "
+                  + "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+              Integer.class,
+              table,
+              column);
+      if (count != null && count == 0) {
+        jdbcTemplate.execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
+        log.info("Added column {}.{}", table, column);
+      }
+    } catch (Exception e) {
+      log.warn("Could not add {}.{}: {}", table, column, e.getMessage());
+    }
   }
 
   private void alterNullable(String table, String column) {

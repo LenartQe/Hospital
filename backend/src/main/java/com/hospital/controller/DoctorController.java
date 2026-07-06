@@ -8,6 +8,7 @@ import com.hospital.repository.DepartmentRepository;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.service.AdminDeleteService;
 import com.hospital.service.DoctorService;
+import com.hospital.util.DoctorCatalog;
 import com.hospital.util.Require;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -46,11 +47,20 @@ public class DoctorController {
   }
 
   @GetMapping
-  public List<Doctor> list(@RequestParam(required = false) Long departmentId) {
+  public List<Doctor> list(
+      @RequestParam(required = false) Long departmentId,
+      @RequestParam(defaultValue = "false") boolean all) {
+    List<Doctor> doctors =
+        all
+            ? doctorRepository.findAll()
+            : DoctorCatalog.featuredDoctors(doctorRepository.findByFeaturedTrueOrderByNameAsc());
     if (departmentId != null) {
-      return doctorRepository.findByDepartmentId(Require.id(departmentId, "ID e departamentit"));
+      long deptId = Require.id(departmentId, "ID e departamentit");
+      return doctors.stream()
+          .filter(d -> d.getDepartment() != null && deptId == d.getDepartment().getId())
+          .toList();
     }
-    return doctorRepository.findAll();
+    return doctors;
   }
 
   @GetMapping("/{id}")

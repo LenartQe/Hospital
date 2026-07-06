@@ -3,6 +3,7 @@ package com.hospital.controller;
 import com.hospital.dto.DoctorAppointmentDTO;
 import com.hospital.dto.DoctorProfileDTO;
 import com.hospital.entity.Diagnosis;
+import com.hospital.entity.Medicine;
 import com.hospital.entity.Prescription;
 import com.hospital.service.PortalService;
 import com.hospital.util.Require;
@@ -89,6 +90,11 @@ public class DoctorPortalController {
   @GetMapping("/profile")
   public DoctorProfileDTO profile(Authentication authentication) {
     return portalService.doctorProfile(Require.authUserId(authentication));
+  }
+
+  @GetMapping("/medicines")
+  public List<Medicine> medicines(Authentication authentication) {
+    return portalService.medicinesForDoctor(Require.authUserId(authentication));
   }
 
   @GetMapping("/patients")

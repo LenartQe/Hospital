@@ -38,6 +38,10 @@ public class Medicine {
   @Column(name = "expiry_batch_note", length = 500)
   private String expiryBatchNote;
 
+  /** GENERAL, CARDIOLOGY, PEDIATRICS */
+  @Column(name = "specialty_key", length = 50)
+  private String specialtyKey;
+
   @Column(name = "created_at")
   private Instant createdAt = Instant.now();
 
@@ -103,6 +107,14 @@ public class Medicine {
 
   public void setExpiryBatchNote(String expiryBatchNote) {
     this.expiryBatchNote = expiryBatchNote;
+  }
+
+  public String getSpecialtyKey() {
+    return specialtyKey;
+  }
+
+  public void setSpecialtyKey(String specialtyKey) {
+    this.specialtyKey = specialtyKey;
   }
 
   public Instant getCreatedAt() {

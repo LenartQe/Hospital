@@ -8,6 +8,7 @@ import com.hospital.repository.AppUserRepository;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.repository.PatientProfileRepository;
 import com.hospital.security.JwtService;
+import com.hospital.util.DoctorCatalog;
 import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -142,7 +143,7 @@ public class AuthService {
     Doctor doctor =
         doctorRepository.findAll().stream()
             .filter(d -> user.getEmail().equalsIgnoreCase(d.getEmail()))
-            .reduce(this::preferDoctorRecord)
+            .reduce(DoctorCatalog::preferDoctorRecord)
             .orElseThrow(
                 () ->
                     new ResponseStatusException(
@@ -153,27 +154,6 @@ public class AuthService {
       doctor.setEmail(user.getEmail());
     }
     doctorRepository.save(doctor);
-  }
-
-  private Doctor preferDoctorRecord(Doctor current, Doctor candidate) {
-    if (isPreferredDoctorName(candidate.getFullName()) && !isPreferredDoctorName(current.getFullName())) {
-      return candidate;
-    }
-    if (!isPreferredDoctorName(candidate.getFullName()) && isPreferredDoctorName(current.getFullName())) {
-      return current;
-    }
-    return candidate.getId() != null && current.getId() != null && candidate.getId() > current.getId()
-        ? candidate
-        : current;
-  }
-
-  private boolean isPreferredDoctorName(String name) {
-    if (name == null) {
-      return false;
-    }
-    String normalized = name.trim();
-    return !normalized.regionMatches(true, 0, "Dr.", 0, 3)
-        && !normalized.regionMatches(true, 0, "Dr", 0, 2);
   }
 
   private AuthResult toAuthResult(AppUser user) {

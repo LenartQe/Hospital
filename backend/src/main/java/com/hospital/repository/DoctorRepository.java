@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 public interface DoctorRepository extends JpaRepository<Doctor, Long> {
   List<Doctor> findByDepartmentId(Long departmentId);
 
+  List<Doctor> findByFeaturedTrueOrderByNameAsc();
+
   Optional<Doctor> findByUserId(Long userId);
 
   Optional<Doctor> findByEmail(String email);
