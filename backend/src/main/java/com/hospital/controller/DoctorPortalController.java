@@ -3,9 +3,11 @@ package com.hospital.controller;
 import com.hospital.entity.Appointment;
 import com.hospital.entity.Diagnosis;
 import com.hospital.entity.Doctor;
+import com.hospital.entity.Patient;
 import com.hospital.entity.Prescription;
 import com.hospital.service.PortalService;
 import com.hospital.util.Require;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -41,7 +43,7 @@ public class DoctorPortalController {
 
   @PatchMapping("/appointments/{id}/status")
   public Appointment updateStatus(
-      Authentication authentication, @PathVariable Long id, @RequestBody StatusBody body) {
+      Authentication authentication, @PathVariable Long id, @Valid @RequestBody StatusBody body) {
     return portalService.updateAppointmentStatus(
         Require.authUserId(authentication), id, body.status());
   }
@@ -97,8 +99,8 @@ public class DoctorPortalController {
                 new PatientSummary(
                     p.getId(),
                     portalService.patientDisplayName(p),
-                    p.getUser() != null ? p.getUser().getEmail() : null,
-                    p.getUser() != null ? p.getUser().getPhone() : null))
+                    p.getEmail(),
+                    p.getPhoneNumber()))
         .toList();
   }
 
@@ -106,7 +108,7 @@ public class DoctorPortalController {
   public Diagnosis addDiagnosis(
       Authentication authentication,
       @PathVariable Long patientId,
-      @RequestBody DiagnosisRequest body) {
+      @Valid @RequestBody DiagnosisRequest body) {
     return portalService.createDiagnosis(
         Require.authUserId(authentication),
         patientId,
@@ -119,7 +121,7 @@ public class DoctorPortalController {
   public Prescription addPrescription(
       Authentication authentication,
       @PathVariable Long patientId,
-      @RequestBody PrescriptionRequest body) {
+      @Valid @RequestBody PrescriptionRequest body) {
     return portalService.createPrescription(
         Require.authUserId(authentication),
         patientId,
