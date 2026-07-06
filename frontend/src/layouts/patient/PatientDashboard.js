@@ -7,9 +7,15 @@ import PatientEmptyState from "layouts/patient/PatientEmptyState";
 const STATUS_SQ = {
   PENDING: "Në pritje",
   CONFIRMED: "Konfirmuar",
+  REJECTED: "Refuzuar",
   CANCELLED: "Anuluar",
   COMPLETED: "Përfunduar",
 };
+
+function formatMoney(value) {
+  const amount = Number(value || 0);
+  return new Intl.NumberFormat("sq-AL", { style: "currency", currency: "EUR" }).format(amount);
+}
 
 function formatDate(iso) {
   if (!iso) return "—";
@@ -90,7 +96,7 @@ function DiagnosesCard({ diagnoses }) {
       {diagnoses?.length ? (
         diagnoses.map((d) => (
           <div key={d.id} className="patient-diagnosis-item">
-            <h4>{d.title}</h4>
+            <h4>{d.title || d.diagnosisName}</h4>
             <p className="meta">
               Dr. {d.doctor?.fullName} · {formatDate(d.diagnosedAt)}
               {d.severity ? ` · ${d.severity}` : ""}
@@ -124,6 +130,7 @@ function PrescriptionsCard({ prescriptions }) {
                 <th>Barna</th>
                 <th>Doza</th>
                 <th>Frekuenca</th>
+                <th>Çmimi</th>
                 <th>Mjeku</th>
               </tr>
             </thead>
@@ -133,6 +140,7 @@ function PrescriptionsCard({ prescriptions }) {
                   <td>{p.medicine?.name}</td>
                   <td>{p.dosage}</td>
                   <td>{p.frequency}</td>
+                  <td>{formatMoney(p.medicine?.price)}</td>
                   <td>{p.doctor?.fullName}</td>
                 </tr>
               ))}
@@ -196,6 +204,78 @@ AppointmentsCard.propTypes = {
   appointments: PropTypes.arrayOf(PropTypes.object),
 };
 
+function BillingCard({ invoiceLines, invoiceTotal }) {
+  return (
+    <article className="patient-card">
+      <h2 className="patient-card__title">
+        <span className="material-icons-round">receipt_long</span>
+        Fatura e pagesës
+      </h2>
+      {invoiceLines?.length ? (
+        <>
+          <div className="patient-table-wrap">
+            <table className="patient-table">
+              <thead>
+                <tr>
+                  <th>Barna</th>
+                  <th>Doza</th>
+                  <th>Mjeku</th>
+                  <th>Data</th>
+                  <th>Çmimi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoiceLines.map((line) => (
+                  <tr key={line.prescriptionId}>
+                    <td>{line.medicineName}</td>
+                    <td>
+                      {line.dosage}
+                      {line.frequency ? ` · ${line.frequency}` : ""}
+                    </td>
+                    <td>{line.doctorName}</td>
+                    <td>{formatDate(line.prescribedAt)}</td>
+                    <td>{formatMoney(line.lineTotal)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div
+            style={{
+              marginTop: "1rem",
+              padding: "1rem",
+              borderRadius: "12px",
+              background: "linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <span style={{ fontWeight: 600, color: "#334155" }}>Totali për t&apos;u paguar</span>
+            <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1d4ed8" }}>
+              {formatMoney(invoiceTotal)}
+            </span>
+          </div>
+          <p style={{ marginTop: "0.75rem", fontSize: "0.85rem", color: "#64748b" }}>
+            Fatura përfshin barnat e përshkruara nga mjekët tuaj. Për pagesë në recepsion, tregoni
+            email-in e llogarisë suaj.
+          </p>
+        </>
+      ) : (
+        <PatientEmptyState
+          icon="payments"
+          message="Nuk ka fatura aktive. Barnat e përshkruara do të shfaqen këtu me çmimet."
+        />
+      )}
+    </article>
+  );
+}
+
+BillingCard.propTypes = {
+  invoiceLines: PropTypes.arrayOf(PropTypes.object),
+  invoiceTotal: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+};
+
 export default function PatientDashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
@@ -238,16 +318,7 @@ export default function PatientDashboard() {
       case "billing":
         return (
           <div className="patient-portal__grid patient-portal__grid--wide">
-            <article className="patient-card">
-              <h2 className="patient-card__title">
-                <span className="material-icons-round">receipt_long</span>
-                Faturat & Pagesat
-              </h2>
-              <PatientEmptyState
-                icon="payments"
-                message="Moduli i faturave do të aktivizohet së shpejti. Kontaktoni recepsionin për pagesa."
-              />
-            </article>
+            <BillingCard invoiceLines={data?.invoiceLines} invoiceTotal={data?.invoiceTotal} />
           </div>
         );
       case "home":

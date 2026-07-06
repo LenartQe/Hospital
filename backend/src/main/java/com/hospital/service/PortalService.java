@@ -3,29 +3,35 @@ package com.hospital.service;
 import com.hospital.dto.DoctorAppointmentDTO;
 import com.hospital.dto.DoctorProfileDTO;
 import com.hospital.dto.PatientDashboardDto;
+import com.hospital.dto.PatientInvoiceLineDto;
 import com.hospital.entity.Appointment;
 import com.hospital.entity.AppUser;
 import com.hospital.entity.Diagnosis;
 import com.hospital.entity.Doctor;
+import com.hospital.entity.DoctorHiddenPatient;
 import com.hospital.entity.Medicine;
 import com.hospital.entity.Patient;
 import com.hospital.entity.PatientProfile;
 import com.hospital.entity.Prescription;
 import com.hospital.repository.AppointmentRepository;
 import com.hospital.repository.DiagnosisRepository;
+import com.hospital.repository.DoctorHiddenPatientRepository;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.repository.MedicineRepository;
 import com.hospital.repository.PatientProfileRepository;
 import com.hospital.repository.PatientRepository;
 import com.hospital.repository.PrescriptionRepository;
 import com.hospital.util.Require;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +49,7 @@ public class PortalService {
   private final PrescriptionRepository prescriptionRepository;
   private final AppointmentRepository appointmentRepository;
   private final MedicineRepository medicineRepository;
+  private final DoctorHiddenPatientRepository doctorHiddenPatientRepository;
 
   public PortalService(
       PatientProfileRepository patientProfileRepository,
@@ -52,7 +59,8 @@ public class PortalService {
       DiagnosisRepository diagnosisRepository,
       PrescriptionRepository prescriptionRepository,
       AppointmentRepository appointmentRepository,
-      MedicineRepository medicineRepository) {
+      MedicineRepository medicineRepository,
+      DoctorHiddenPatientRepository doctorHiddenPatientRepository) {
     this.patientProfileRepository = patientProfileRepository;
     this.patientRepository = patientRepository;
     this.patientService = patientService;
@@ -61,6 +69,7 @@ public class PortalService {
     this.prescriptionRepository = prescriptionRepository;
     this.appointmentRepository = appointmentRepository;
     this.medicineRepository = medicineRepository;
+    this.doctorHiddenPatientRepository = doctorHiddenPatientRepository;
   }
 
   @Transactional(readOnly = true)
@@ -86,6 +95,7 @@ public class PortalService {
     PatientProfile profile = requirePatientProfile(userId);
     AppUser user = Require.notNull(profile.getUser(), "Përdoruesi i pacientit");
     Patient patient = resolvePatient(profile, user);
+    syncPatientRecords(profile, user, patient);
     Long patientId = Require.notNull(patient.getId(), "ID e pacientit");
 
     List<Diagnosis> diagnoses = diagnosisRepository.findByPatientIdOrderByCreatedAtDesc(patientId);
@@ -97,18 +107,31 @@ public class PortalService {
       appointments =
           appointmentRepository.findByPatientProfileIdOrderByCreatedAtDesc(profile.getId());
     }
+    List<PatientInvoiceLineDto> invoiceLines = buildInvoiceLines(prescriptions);
+    BigDecimal invoiceTotal =
+        invoiceLines.stream()
+            .map(PatientInvoiceLineDto::getLineTotal)
+            .filter(total -> total != null)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    String displayEmail =
+        user.getEmail() != null && !user.getEmail().isBlank()
+            ? user.getEmail()
+            : patient.getEmail();
 
     return new PatientDashboardDto(
         user.getFullName(),
-        user.getEmail(),
-        user.getPhone(),
+        displayEmail,
+        user.getPhone() != null ? user.getPhone() : patient.getPhoneNumber(),
         profile.getDateOfBirth(),
         patient.getBloodType() != null ? patient.getBloodType() : profile.getBloodType(),
         patient.getAllergies() != null ? patient.getAllergies() : profile.getAllergies(),
         profile.getNotes(),
         diagnoses,
         prescriptions,
-        appointments);
+        appointments,
+        invoiceLines,
+        invoiceTotal);
   }
 
   public Map<String, Object> doctorDashboard(Long userId) {
@@ -230,15 +253,31 @@ public class PortalService {
   public List<Patient> listPatientsForDoctor(Long userId) {
     Doctor doctor = requireDoctorByUserId(userId);
     Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
+    Set<Long> hidden = new HashSet<>();
+    doctorHiddenPatientRepository.findByDoctorId(doctorId).forEach(h -> hidden.add(h.getPatientId()));
     List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId);
     Map<Long, Patient> byId = new LinkedHashMap<>();
     for (Appointment appointment : appointments) {
       Patient patient = resolveAppointmentPatient(appointment);
-      if (patient != null && patient.getId() != null) {
+      if (patient != null && patient.getId() != null && !hidden.contains(patient.getId())) {
         byId.putIfAbsent(patient.getId(), patient);
       }
     }
     return new ArrayList<>(byId.values());
+  }
+
+  public void hidePatientFromDoctor(Long userId, Long patientId) {
+    Doctor doctor = requireDoctorByUserId(userId);
+    long pid = Require.id(patientId, "ID e pacientit");
+    Patient patient = resolvePatientById(pid);
+    assertDoctorPatientAccess(doctor, patient);
+    Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
+    if (!doctorHiddenPatientRepository.existsByDoctorIdAndPatientId(doctorId, pid)) {
+      DoctorHiddenPatient hidden = new DoctorHiddenPatient();
+      hidden.setDoctorId(doctorId);
+      hidden.setPatientId(pid);
+      doctorHiddenPatientRepository.save(hidden);
+    }
   }
 
   public String patientDisplayName(PatientProfile profile) {
@@ -448,5 +487,90 @@ public class PortalService {
                         () ->
                             new ResponseStatusException(
                                 HttpStatus.NOT_FOUND, "Pacienti nuk u gjet.")));
+  }
+
+  private void syncPatientRecords(PatientProfile profile, AppUser user, Patient patient) {
+    boolean patientUpdated = false;
+    if ((patient.getEmail() == null || patient.getEmail().isBlank())
+        && user.getEmail() != null
+        && !user.getEmail().isBlank()) {
+      patient.setEmail(user.getEmail().trim().toLowerCase());
+      patientUpdated = true;
+    }
+    if ((patient.getPhoneNumber() == null || patient.getPhoneNumber().isBlank())
+        && user.getPhone() != null
+        && !user.getPhone().isBlank()) {
+      patient.setPhoneNumber(user.getPhone());
+      patientUpdated = true;
+    }
+    if (patientUpdated) {
+      patientRepository.save(patient);
+    }
+
+    patientRepository
+        .findByEmail(user.getEmail())
+        .filter(existing -> existing.getUserId() == null)
+        .ifPresent(
+            existing -> {
+              existing.setUserId(user.getId());
+              patientRepository.save(existing);
+              if (profile.getPatient() == null || !existing.getId().equals(profile.getPatient().getId())) {
+                profile.setPatient(existing);
+                patientProfileRepository.save(profile);
+              }
+            });
+
+    if (user.getEmail() != null && !user.getEmail().isBlank()) {
+      for (Appointment appointment :
+          appointmentRepository.findByEmailIgnoreCaseOrderByCreatedAtDesc(user.getEmail())) {
+        linkAppointmentToPatientRecord(appointment, profile, patient);
+      }
+    }
+    if (profile.getId() != null) {
+      for (Appointment appointment :
+          appointmentRepository.findByPatientProfileIdOrderByCreatedAtDesc(profile.getId())) {
+        linkAppointmentToPatientRecord(appointment, profile, patient);
+      }
+    }
+  }
+
+  private void linkAppointmentToPatientRecord(
+      Appointment appointment, PatientProfile profile, Patient patient) {
+    boolean changed = false;
+    if (appointment.getPatient() == null
+        || !patient.getId().equals(appointment.getPatient().getId())) {
+      appointment.setPatient(patient);
+      changed = true;
+    }
+    if (profile.getId() != null && appointment.getPatientProfileId() == null) {
+      appointment.setPatientProfileId(profile.getId());
+      changed = true;
+    }
+    if (changed) {
+      appointmentRepository.save(appointment);
+    }
+  }
+
+  private List<PatientInvoiceLineDto> buildInvoiceLines(List<Prescription> prescriptions) {
+    List<PatientInvoiceLineDto> lines = new ArrayList<>();
+    for (Prescription prescription : prescriptions) {
+      Medicine medicine = prescription.getMedicine();
+      BigDecimal unitPrice =
+          medicine != null && medicine.getPrice() != null ? medicine.getPrice() : BigDecimal.ZERO;
+      String doctorName =
+          prescription.getDoctor() != null ? prescription.getDoctor().getFullName() : "—";
+      String medicineName = medicine != null ? medicine.getName() : "—";
+      lines.add(
+          new PatientInvoiceLineDto(
+              prescription.getId(),
+              medicineName,
+              prescription.getDosage(),
+              prescription.getFrequency(),
+              doctorName,
+              unitPrice,
+              unitPrice,
+              prescription.getPrescribedAt()));
+    }
+    return lines;
   }
 }

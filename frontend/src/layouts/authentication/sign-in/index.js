@@ -40,6 +40,17 @@ export default function SignIn() {
   const roleIndex = ROLES.findIndex((r) => r.key === role);
   const selectedDoctor = doctorOptions.find((d) => d.id === selectedDoctorId) || null;
 
+  const selectDoctor = (doctor) => {
+    setSelectedDoctorId(doctor.id);
+    setEmail(doctor.email);
+    setPassword(doctor.password || "hospital123");
+    setError("");
+  };
+
+  useEffect(() => {
+    setRole(roleFromQuery(searchParams.get("role")));
+  }, [searchParams]);
+
   useEffect(() => {
     if (role !== "DOCTOR") {
       return;
@@ -48,19 +59,20 @@ export default function SignIn() {
       .doctorEmails()
       .then((list) => {
         setDoctorOptions(list);
+        const fromQuery = searchParams.get("doctorId");
+        if (fromQuery) {
+          const match = list.find((d) => String(d.id) === String(fromQuery));
+          if (match) {
+            selectDoctor(match);
+            return;
+          }
+        }
         if (list.length) {
           selectDoctor(list[0]);
         }
       })
       .catch(() => setDoctorOptions([]));
-  }, [role]);
-
-  const selectDoctor = (doctor) => {
-    setSelectedDoctorId(doctor.id);
-    setEmail(doctor.email);
-    setPassword(doctor.password || "hospital123");
-    setError("");
-  };
+  }, [role, searchParams]);
 
   const handleSignIn = async (e) => {
     e.preventDefault();

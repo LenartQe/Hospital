@@ -3,6 +3,7 @@ package com.hospital.dto;
 import com.hospital.entity.Appointment;
 import com.hospital.entity.Diagnosis;
 import com.hospital.entity.Prescription;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -16,4 +17,6 @@ public record PatientDashboardDto(
     String notes,
     List<Diagnosis> diagnoses,
     List<Prescription> prescriptions,
-    List<Appointment> appointments) {}
+    List<Appointment> appointments,
+    List<PatientInvoiceLineDto> invoiceLines,
+    BigDecimal invoiceTotal) {}

@@ -30,7 +30,7 @@ public class Diagnosis {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(name = "title", nullable = false, length = 300)
+  @Column(name = "diagnosis_name", nullable = false, length = 300)
   private String diagnosisName;
 
   @Column(length = 4000)

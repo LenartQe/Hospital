@@ -41,6 +41,7 @@ export default function HospitalDoctors() {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(empty);
   const [error, setError] = useState("");
+  const [onboardedDoctor, setOnboardedDoctor] = useState(null);
 
   const load = () =>
     hospitalApi.doctors
@@ -96,10 +97,24 @@ export default function HospitalDoctors() {
       departmentId: Number(form.departmentId),
     };
     const p = editId ? hospitalApi.doctors.update(editId, body) : hospitalApi.doctors.create(body);
-    p.then(() => {
+    p.then((result) => {
       setOpen(false);
       load();
+      if (!editId && result?.doctor) {
+        const created = {
+          ...result.doctor,
+          loginEmail: result.loginEmail || result.doctor.email,
+          loginPassword: result.loginPassword || "hospital123",
+        };
+        setOnboardedDoctor(created);
+        openDoctorLogin(created);
+      }
     }).catch((e) => setError(parseApiError(e)));
+  };
+
+  const openDoctorLogin = (doctor) => {
+    const url = `/authentication/sign-in?role=doctor&doctorId=${doctor.id}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const remove = (id) => {
@@ -253,6 +268,58 @@ export default function HospitalDoctors() {
           <Button onClick={() => setOpen(false)}>Anulo</Button>
           <Button onClick={save} variant="contained">
             Ruaj
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={Boolean(onboardedDoctor)}
+        onClose={() => setOnboardedDoctor(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Mjeku u krijua — hyrja në portal</DialogTitle>
+        <DialogContent>
+          {onboardedDoctor ? (
+            <MDBox display="flex" flexDirection="column" alignItems="center" gap={2} pt={1}>
+              <MDBox
+                component="img"
+                src={onboardedDoctor.imageUrl || ""}
+                alt={onboardedDoctor.fullName}
+                sx={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "3px solid #fff",
+                  boxShadow: "0 4px 16px rgba(15,23,42,0.15)",
+                }}
+              />
+              <MDTypography variant="h6" fontWeight="bold">
+                {onboardedDoctor.fullName}
+              </MDTypography>
+              <MDTypography variant="button" color="text">
+                {onboardedDoctor.specialty || "Mjek"}
+              </MDTypography>
+              <MDTypography variant="caption" color="text" display="block" textAlign="center">
+                Email: <strong>{onboardedDoctor.loginEmail}</strong>
+                <br />
+                Fjalëkalimi: <strong>{onboardedDoctor.loginPassword}</strong>
+              </MDTypography>
+            </MDBox>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOnboardedDoctor(null)}>Mbyll</Button>
+          <Button
+            variant="contained"
+            color="info"
+            onClick={() => {
+              if (onboardedDoctor) {
+                openDoctorLogin(onboardedDoctor);
+              }
+            }}
+          >
+            Hap faqen e hyrjes
           </Button>
         </DialogActions>
       </Dialog>

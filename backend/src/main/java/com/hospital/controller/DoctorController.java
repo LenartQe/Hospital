@@ -1,5 +1,6 @@
 package com.hospital.controller;
 
+import com.hospital.config.AuthDataInitializer;
 import com.hospital.dto.DoctorDashboardDTO;
 import com.hospital.entity.Appointment;
 import com.hospital.entity.Department;
@@ -7,6 +8,7 @@ import com.hospital.entity.Doctor;
 import com.hospital.repository.DepartmentRepository;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.service.AdminDeleteService;
+import com.hospital.service.DoctorOnboardingService;
 import com.hospital.service.DoctorService;
 import com.hospital.util.DoctorCatalog;
 import com.hospital.util.Require;
@@ -34,16 +36,19 @@ public class DoctorController {
   private final DepartmentRepository departmentRepository;
   private final AdminDeleteService adminDeleteService;
   private final DoctorService doctorService;
+  private final DoctorOnboardingService doctorOnboardingService;
 
   public DoctorController(
       DoctorRepository doctorRepository,
       DepartmentRepository departmentRepository,
       AdminDeleteService adminDeleteService,
-      DoctorService doctorService) {
+      DoctorService doctorService,
+      DoctorOnboardingService doctorOnboardingService) {
     this.doctorRepository = doctorRepository;
     this.departmentRepository = departmentRepository;
     this.adminDeleteService = adminDeleteService;
     this.doctorService = doctorService;
+    this.doctorOnboardingService = doctorOnboardingService;
   }
 
   @GetMapping
@@ -83,10 +88,12 @@ public class DoctorController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public Doctor create(@Valid @RequestBody DoctorRequest body) {
+  public DoctorCreateResponse create(@Valid @RequestBody DoctorRequest body) {
     Doctor d = new Doctor();
     apply(body, d);
-    return doctorRepository.save(d);
+    d = doctorRepository.save(d);
+    d = doctorOnboardingService.onboard(d);
+    return new DoctorCreateResponse(d, d.getEmail(), AuthDataInitializer.DEMO_PASSWORD);
   }
 
   @PutMapping("/{id}")
@@ -131,4 +138,6 @@ public class DoctorController {
       String bio,
       String imageUrl,
       @NotNull Long departmentId) {}
+
+  public record DoctorCreateResponse(Doctor doctor, String loginEmail, String loginPassword) {}
 }

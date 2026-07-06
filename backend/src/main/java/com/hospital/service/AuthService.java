@@ -7,6 +7,7 @@ import com.hospital.entity.UserRole;
 import com.hospital.repository.AppUserRepository;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.repository.PatientProfileRepository;
+import com.hospital.repository.PatientRepository;
 import com.hospital.security.JwtService;
 import com.hospital.util.DoctorCatalog;
 import java.util.Optional;
@@ -24,6 +25,7 @@ public class AuthService {
   private final AppUserRepository appUserRepository;
   private final PatientProfileRepository patientProfileRepository;
   private final PatientService patientService;
+  private final PatientRepository patientRepository;
   private final DoctorRepository doctorRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
@@ -32,12 +34,14 @@ public class AuthService {
       AppUserRepository appUserRepository,
       PatientProfileRepository patientProfileRepository,
       PatientService patientService,
+      PatientRepository patientRepository,
       DoctorRepository doctorRepository,
       PasswordEncoder passwordEncoder,
       JwtService jwtService) {
     this.appUserRepository = appUserRepository;
     this.patientProfileRepository = patientProfileRepository;
     this.patientService = patientService;
+    this.patientRepository = patientRepository;
     this.doctorRepository = doctorRepository;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
@@ -124,13 +128,26 @@ public class AuthService {
                   return patientProfileRepository.save(created);
                 });
     Patient patient = patientService.ensureForUser(user);
-    if (profile.getPatient() == null || !patient.getId().equals(profile.getPatient().getId())) {
-      profile.setPatient(patient);
-      if (patient.getBloodType() == null && profile.getBloodType() != null) {
-        patient.setBloodType(profile.getBloodType());
+    if (user.getEmail() != null && !user.getEmail().isBlank()) {
+      patient =
+          patientRepository
+              .findByEmail(user.getEmail().trim().toLowerCase())
+              .filter(existing -> existing.getUserId() == null)
+              .map(
+                  existing -> {
+                    existing.setUserId(user.getId());
+                    return patientRepository.save(existing);
+                  })
+              .orElse(patient);
+    }
+    final Patient linkedPatient = patient;
+    if (profile.getPatient() == null || !linkedPatient.getId().equals(profile.getPatient().getId())) {
+      profile.setPatient(linkedPatient);
+      if (linkedPatient.getBloodType() == null && profile.getBloodType() != null) {
+        linkedPatient.setBloodType(profile.getBloodType());
       }
-      if (patient.getAllergies() == null && profile.getAllergies() != null) {
-        patient.setAllergies(profile.getAllergies());
+      if (linkedPatient.getAllergies() == null && profile.getAllergies() != null) {
+        linkedPatient.setAllergies(profile.getAllergies());
       }
       patientProfileRepository.save(profile);
     }

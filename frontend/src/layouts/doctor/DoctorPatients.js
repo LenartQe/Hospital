@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Users, Activity, Pill } from "lucide-react";
+import { Users, Activity, Pill, UserX } from "lucide-react";
 import { hospitalApi, parseApiError } from "api/hospitalApi";
 import DoctorPortalLayout from "./DoctorPortalLayout";
 import PageHeader from "./components/PageHeader";
@@ -81,6 +81,23 @@ export default function DoctorPatients() {
       .catch((e) => setError(parseApiError(e)));
   };
 
+  const removePatient = (id) => {
+    if (!window.confirm("Të hiqet ky pacient nga lista juaj? Mund të rikthehet me termin të ri.")) {
+      return;
+    }
+    hospitalApi.doctor
+      .hidePatient(id)
+      .then(() => {
+        if (String(patientId) === String(id)) {
+          setPatientId("");
+        }
+        setMsg("Pacienti u hoq nga lista.");
+        setError("");
+        load();
+      })
+      .catch((e) => setError(parseApiError(e)));
+  };
+
   const selectedPatient = patients.find((p) => String(p.id) === String(patientId));
 
   const patientOptions = [
@@ -131,33 +148,45 @@ export default function DoctorPatients() {
                 patients.map((p) => {
                   const selected = String(patientId) === String(p.id);
                   return (
-                    <button
+                    <div
                       key={p.id}
-                      type="button"
-                      onClick={() => selectPatient(p.id)}
-                      className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all duration-200 ${
+                      className={`flex w-full items-center gap-2 rounded-xl border p-3 transition-all duration-200 ${
                         selected
                           ? "border-blue-300 bg-blue-50 ring-2 ring-blue-500/30"
-                          : "border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-white"
+                          : "border-slate-100 bg-slate-50/50"
                       }`}
                     >
-                      <PatientAvatar name={p.fullName} size="md" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold text-slate-900">{p.fullName}</p>
-                        {p.email ? (
-                          <span className="mt-0.5 inline-block truncate rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
-                            {p.email}
-                          </span>
-                        ) : null}
-                      </div>
-                      <span
-                        className={`rounded-lg px-2 py-1 text-xs font-semibold ${
-                          selected ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-600"
-                        }`}
+                      <button
+                        type="button"
+                        onClick={() => selectPatient(p.id)}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left hover:opacity-90"
                       >
-                        {selected ? "Zgjedhur" : "Zgjidh"}
-                      </span>
-                    </button>
+                        <PatientAvatar name={p.fullName} size="md" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-slate-900">{p.fullName}</p>
+                          {p.email ? (
+                            <span className="mt-0.5 inline-block truncate rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+                              {p.email}
+                            </span>
+                          ) : null}
+                        </div>
+                        <span
+                          className={`rounded-lg px-2 py-1 text-xs font-semibold ${
+                            selected ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-600"
+                          }`}
+                        >
+                          {selected ? "Zgjedhur" : "Zgjidh"}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        title="Hiq nga lista"
+                        onClick={() => removePatient(p.id)}
+                        className="rounded-lg border border-red-200 p-2 text-red-600 transition hover:bg-red-50"
+                      >
+                        <UserX size={16} />
+                      </button>
+                    </div>
                   );
                 })
               )}

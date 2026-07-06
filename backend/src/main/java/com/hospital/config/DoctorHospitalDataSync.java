@@ -89,6 +89,10 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
         .forEach(
             doctor -> {
               String image = imageForDoctor(doctor.getFullName());
+              if (image == null
+                  && (doctor.getImageUrl() == null || doctor.getImageUrl().isBlank())) {
+                image = defaultMaleImage(doctor.getId());
+              }
               if (image != null) {
                 doctor.setImageUrl(image);
                 doctorRepository.save(doctor);
@@ -120,6 +124,16 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
       return IMG_BLERDON;
     }
     return null;
+  }
+
+  private String defaultMaleImage(Long doctorId) {
+    String[] pool = {
+      IMG_KADRI, IMG_EMIR, IMG_LENART, IMG_BLERDON,
+      "https://images.unsplash.com/photo-1622253692010-21aabed25171?w=400&h=400&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face"
+    };
+    long key = doctorId != null ? doctorId : 0L;
+    return pool[(int) (Math.abs(key) % pool.length)];
   }
 
   private void ensureDoctorLoginAccounts() {
