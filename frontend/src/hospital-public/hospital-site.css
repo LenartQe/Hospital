@@ -22,3 +22,169 @@
   white-space: nowrap;
   font-size: 0.9rem;
 }
+
+/* ——— Public pages: doctors grid ——— */
+.hospital-doctors-page {
+  padding-top: 3rem;
+  padding-bottom: 4rem;
+}
+
+.hospital-doctor-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hospital-doctor-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+.hospital-doctor-card__photo-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1.5rem 0;
+  background: linear-gradient(180deg, #f0f7ff 0%, #fff 100%);
+}
+
+.hospital-doctor-card__photo {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 8px 24px rgba(26, 115, 232, 0.2);
+}
+
+.hospital-doctor-card__body {
+  padding: 1.25rem 1.5rem 1.75rem;
+}
+
+.hospital-doctor-card__name a {
+  color: #223a66;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hospital-doctor-card__name a:hover {
+  color: #1a73e8;
+}
+
+.hospital-doctor-card__specialty {
+  color: #1a73e8;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.hospital-doctor-card__dept {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* ——— Content images ——— */
+.hospital-content-img {
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: cover;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.1);
+}
+
+.hospital-page-hero {
+  padding-top: 3rem;
+}
+
+.hospital-stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  height: 100%;
+}
+
+.hospital-stat-card__num {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1a73e8;
+  margin-bottom: 0.5rem;
+}
+
+.hospital-check-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.hospital-check-list li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.65rem;
+  color: #475569;
+}
+
+.hospital-check-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: 700;
+}
+
+/* ——— Contact ——— */
+.hospital-contact-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.07);
+}
+
+.hospital-contact-card__icon {
+  font-size: 2.5rem;
+  color: #1a73e8;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.hospital-emergency-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  color: #991b1b;
+  font-size: 0.95rem;
+}
+
+/* ——— Services detail cards ——— */
+.hospital-service-detail {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 28px rgba(15, 23, 42, 0.08);
+}
+
+.hospital-service-detail__img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.hospital-service-detail__body {
+  padding: 1.5rem;
+}
+
+.hospital-service-detail__icon {
+  font-size: 1.75rem;
+  color: #1a73e8;
+}
+
+.hospital-service-detail__summary {
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+.hospital-services-page {
+  padding-bottom: 4rem;
+}

@@ -24,16 +24,16 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
 
   private static final String IMG_SARA =
       "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop&crop=face";
-  private static final String IMG_KADRI =
-      "https://images.unsplash.com/photo-1537368911262-87184d0ecad2?w=400&h=400&fit=crop&crop=face";
-  private static final String IMG_EMIR =
-      "https://images.unsplash.com/photo-1582750433449-648ed127fbfe?w=400&h=400&fit=crop&crop=face";
   private static final String IMG_LENART =
       "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face";
   private static final String IMG_MIMOZA =
       "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face";
+  private static final String IMG_KADRI =
+      "https://images.unsplash.com/photo-1622253692010-21aabed25171?w=400&h=400&fit=crop&crop=face";
+  private static final String IMG_EMIR =
+      "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face";
   private static final String IMG_BLERDON =
-      "https://images.unsplash.com/photo-1624224837377-28f9f55818f4?w=400&h=400&fit=crop&crop=face";
+      "https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=400&h=400&fit=crop&crop=face";
 
   private final DoctorRepository doctorRepository;
   private final AppUserRepository appUserRepository;
@@ -89,14 +89,11 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
         .forEach(
             doctor -> {
               String image = imageForDoctor(doctor.getFullName());
-              if (image == null
-                  && (doctor.getImageUrl() == null || doctor.getImageUrl().isBlank())) {
+              if (image == null) {
                 image = defaultMaleImage(doctor.getId());
               }
-              if (image != null) {
-                doctor.setImageUrl(image);
-                doctorRepository.save(doctor);
-              }
+              doctor.setImageUrl(image);
+              doctorRepository.save(doctor);
             });
   }
 
@@ -105,22 +102,22 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
       return null;
     }
     String name = fullName.toLowerCase();
-    if (name.contains("sara") && name.contains("kryeziu")) {
+    if (name.contains("sara")) {
       return IMG_SARA;
     }
-    if (name.contains("kadri") && name.contains("mustafa")) {
+    if (name.contains("kadri")) {
       return IMG_KADRI;
     }
-    if (name.contains("emir") && name.contains("zoga")) {
+    if (name.contains("emir")) {
       return IMG_EMIR;
     }
-    if (name.contains("lenart") && name.contains("qollaku")) {
+    if (name.contains("lenart")) {
       return IMG_LENART;
     }
-    if (name.contains("mimoza") && name.contains("kusari")) {
+    if (name.contains("mimoza")) {
       return IMG_MIMOZA;
     }
-    if (name.contains("blerdon") && name.contains("sopaj")) {
+    if (name.contains("blerdon")) {
       return IMG_BLERDON;
     }
     return null;
