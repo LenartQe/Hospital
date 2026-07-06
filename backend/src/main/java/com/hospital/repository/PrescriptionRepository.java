@@ -12,6 +12,8 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, Long
 
   List<Prescription> findByDoctorIdOrderByPrescribedAtDesc(Long doctorId);
 
+  long countByDoctorId(Long doctorId);
+
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("DELETE FROM Prescription p WHERE p.doctor.id = :doctorId")
   void deleteByDoctorId(@Param("doctorId") Long doctorId);

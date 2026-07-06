@@ -4,6 +4,7 @@ import com.hospital.entity.AppUser;
 import com.hospital.entity.Diagnosis;
 import com.hospital.entity.Doctor;
 import com.hospital.entity.Medicine;
+import com.hospital.entity.Patient;
 import com.hospital.entity.PatientProfile;
 import com.hospital.entity.Prescription;
 import com.hospital.entity.UserRole;
@@ -12,8 +13,11 @@ import com.hospital.repository.DiagnosisRepository;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.repository.MedicineRepository;
 import com.hospital.repository.PatientProfileRepository;
+import com.hospital.repository.PatientRepository;
 import com.hospital.repository.PrescriptionRepository;
+import com.hospital.service.PatientService;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,6 +31,8 @@ public class AuthDataInitializer implements CommandLineRunner {
 
   private final AppUserRepository appUserRepository;
   private final PatientProfileRepository patientProfileRepository;
+  private final PatientRepository patientRepository;
+  private final PatientService patientService;
   private final DoctorRepository doctorRepository;
   private final MedicineRepository medicineRepository;
   private final DiagnosisRepository diagnosisRepository;
@@ -36,6 +42,8 @@ public class AuthDataInitializer implements CommandLineRunner {
   public AuthDataInitializer(
       AppUserRepository appUserRepository,
       PatientProfileRepository patientProfileRepository,
+      PatientRepository patientRepository,
+      PatientService patientService,
       DoctorRepository doctorRepository,
       MedicineRepository medicineRepository,
       DiagnosisRepository diagnosisRepository,
@@ -43,6 +51,8 @@ public class AuthDataInitializer implements CommandLineRunner {
       PasswordEncoder passwordEncoder) {
     this.appUserRepository = appUserRepository;
     this.patientProfileRepository = patientProfileRepository;
+    this.patientRepository = patientRepository;
+    this.patientService = patientService;
     this.doctorRepository = doctorRepository;
     this.medicineRepository = medicineRepository;
     this.diagnosisRepository = diagnosisRepository;
@@ -60,13 +70,21 @@ public class AuthDataInitializer implements CommandLineRunner {
 
     AppUser patientUser =
         saveUser("patient@hospital.local", UserRole.PATIENT, "Arben Krasniqi", "+383 44 100 200");
-    PatientProfile patient = new PatientProfile();
-    patient.setUser(patientUser);
-    patient.setDateOfBirth(LocalDate.of(1990, 5, 12));
+    PatientProfile profile = new PatientProfile();
+    profile.setUser(patientUser);
+    profile.setDateOfBirth(LocalDate.of(1990, 5, 12));
+    profile.setBloodType("A+");
+    profile.setAllergies("Penicillin");
+    profile.setNotes("Pacient demo për portalin.");
+    profile = patientProfileRepository.save(profile);
+
+    Patient patient = patientService.ensureForUser(patientUser);
     patient.setBloodType("A+");
     patient.setAllergies("Penicillin");
-    patient.setNotes("Pacient demo për portalin.");
-    patient = patientProfileRepository.save(patient);
+    patient.setPhoneNumber(patientUser.getPhone());
+    patient = patientRepository.save(patient);
+    profile.setPatient(patient);
+    patientProfileRepository.save(profile);
 
     Doctor doctor =
         doctorRepository.findAll().stream().findFirst().orElse(null);
@@ -87,9 +105,10 @@ public class AuthDataInitializer implements CommandLineRunner {
     Diagnosis dx = new Diagnosis();
     dx.setPatient(patient);
     dx.setDoctor(doctor);
-    dx.setTitle("Hipertension i lehtë");
+    dx.setDiagnosisName("Hipertension i lehtë");
     dx.setDescription("Presion i lartë gjaku — monitorim dhe ndryshim stili jetese.");
     dx.setSeverity("MODERATE");
+    dx.setCreatedAt(LocalDateTime.now());
     diagnosisRepository.save(dx);
 
     Prescription rx = new Prescription();

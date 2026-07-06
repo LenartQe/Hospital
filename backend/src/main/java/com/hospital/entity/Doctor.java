@@ -1,5 +1,6 @@
 package com.hospital.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,19 +10,28 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "doctors")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Doctor {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, length = 200)
-  private String fullName;
+  @Column(name = "full_name", nullable = false, length = 200)
+  private String name;
 
   @Column(length = 255)
   private String email;
@@ -29,8 +39,11 @@ public class Doctor {
   @Column(length = 50)
   private String phone;
 
-  @Column(length = 200)
-  private String specialty;
+  @Column(name = "specialty", length = 200)
+  private String specialization;
+
+  @Column(name = "treatment_type", length = 300)
+  private String treatmentType;
 
   @Column(length = 4000)
   private String bio;
@@ -49,83 +62,28 @@ public class Doctor {
   @Column(name = "created_at")
   private Instant createdAt = Instant.now();
 
-  public Long getId() {
-    return id;
-  }
+  @OneToMany(mappedBy = "doctor", fetch = FetchType.LAZY)
+  @JsonIgnore
+  private List<Appointment> appointments = new ArrayList<>();
 
-  public void setId(Long id) {
-    this.id = id;
-  }
+  @OneToMany(mappedBy = "doctor", fetch = FetchType.LAZY)
+  @JsonIgnore
+  private List<Diagnosis> diagnoses = new ArrayList<>();
 
+  /** Backward-compatible accessors used by existing code. */
   public String getFullName() {
-    return fullName;
+    return name;
   }
 
   public void setFullName(String fullName) {
-    this.fullName = fullName;
-  }
-
-  public String getEmail() {
-    return email;
-  }
-
-  public void setEmail(String email) {
-    this.email = email;
-  }
-
-  public String getPhone() {
-    return phone;
-  }
-
-  public void setPhone(String phone) {
-    this.phone = phone;
+    this.name = fullName;
   }
 
   public String getSpecialty() {
-    return specialty;
+    return specialization;
   }
 
   public void setSpecialty(String specialty) {
-    this.specialty = specialty;
-  }
-
-  public String getBio() {
-    return bio;
-  }
-
-  public void setBio(String bio) {
-    this.bio = bio;
-  }
-
-  public String getImageUrl() {
-    return imageUrl;
-  }
-
-  public void setImageUrl(String imageUrl) {
-    this.imageUrl = imageUrl;
-  }
-
-  public Department getDepartment() {
-    return department;
-  }
-
-  public void setDepartment(Department department) {
-    this.department = department;
-  }
-
-  public Long getUserId() {
-    return userId;
-  }
-
-  public void setUserId(Long userId) {
-    this.userId = userId;
-  }
-
-  public Instant getCreatedAt() {
-    return createdAt;
-  }
-
-  public void setCreatedAt(Instant createdAt) {
-    this.createdAt = createdAt;
+    this.specialization = specialty;
   }
 }

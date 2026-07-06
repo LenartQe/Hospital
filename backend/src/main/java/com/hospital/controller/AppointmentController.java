@@ -4,6 +4,7 @@ import com.hospital.entity.Appointment;
 import com.hospital.entity.Doctor;
 import com.hospital.repository.AppointmentRepository;
 import com.hospital.repository.DoctorRepository;
+import com.hospital.service.PortalService;
 import com.hospital.util.Require;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -26,11 +27,15 @@ public class AppointmentController {
 
   private final AppointmentRepository appointmentRepository;
   private final DoctorRepository doctorRepository;
+  private final PortalService portalService;
 
   public AppointmentController(
-      AppointmentRepository appointmentRepository, DoctorRepository doctorRepository) {
+      AppointmentRepository appointmentRepository,
+      DoctorRepository doctorRepository,
+      PortalService portalService) {
     this.appointmentRepository = appointmentRepository;
     this.doctorRepository = doctorRepository;
+    this.portalService = portalService;
   }
 
   @GetMapping
@@ -54,7 +59,9 @@ public class AppointmentController {
     a.setMessage(body.message());
     a.setDoctor(doctor);
     a.setStatus("PENDING");
-    return appointmentRepository.save(a);
+    Appointment saved = appointmentRepository.save(a);
+    portalService.linkAppointmentToPatient(saved);
+    return appointmentRepository.findById(saved.getId()).orElse(saved);
   }
 
   @PatchMapping("/{id}/status")

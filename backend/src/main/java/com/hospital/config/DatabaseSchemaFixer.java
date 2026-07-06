@@ -3,11 +3,13 @@ package com.hospital.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /** Ensures nullable FK columns so admin delete can unlink related rows. */
 @Component
+@Order(0)
 public class DatabaseSchemaFixer implements CommandLineRunner {
 
   private static final Logger log = LoggerFactory.getLogger(DatabaseSchemaFixer.class);

@@ -1,9 +1,8 @@
 package com.hospital.controller;
 
-import com.hospital.entity.Appointment;
+import com.hospital.dto.DoctorAppointmentDTO;
+import com.hospital.dto.DoctorProfileDTO;
 import com.hospital.entity.Diagnosis;
-import com.hospital.entity.Doctor;
-import com.hospital.entity.Patient;
 import com.hospital.entity.Prescription;
 import com.hospital.service.PortalService;
 import com.hospital.util.Require;
@@ -37,15 +36,16 @@ public class DoctorPortalController {
   }
 
   @GetMapping("/appointments")
-  public List<Appointment> appointments(Authentication authentication) {
-    return portalService.doctorAppointments(Require.authUserId(authentication));
+  public List<DoctorAppointmentDTO> appointments(Authentication authentication) {
+    return portalService.doctorAppointmentDtos(Require.authUserId(authentication));
   }
 
   @PatchMapping("/appointments/{id}/status")
-  public Appointment updateStatus(
+  public Map<String, Object> updateStatus(
       Authentication authentication, @PathVariable Long id, @Valid @RequestBody StatusBody body) {
-    return portalService.updateAppointmentStatus(
-        Require.authUserId(authentication), id, body.status());
+    var appointment =
+        portalService.updateAppointmentStatus(Require.authUserId(authentication), id, body.status());
+    return Map.of("id", appointment.getId(), "status", appointment.getStatus());
   }
 
   @GetMapping("/diagnoses")
@@ -87,13 +87,13 @@ public class DoctorPortalController {
   }
 
   @GetMapping("/profile")
-  public Doctor profile(Authentication authentication) {
+  public DoctorProfileDTO profile(Authentication authentication) {
     return portalService.doctorProfile(Require.authUserId(authentication));
   }
 
   @GetMapping("/patients")
-  public List<PatientSummary> patients() {
-    return portalService.listPatientsForDoctor().stream()
+  public List<PatientSummary> patients(Authentication authentication) {
+    return portalService.listPatientsForDoctor(Require.authUserId(authentication)).stream()
         .map(
             p ->
                 new PatientSummary(

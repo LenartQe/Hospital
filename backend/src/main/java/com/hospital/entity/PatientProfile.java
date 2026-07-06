@@ -1,6 +1,7 @@
 package com.hospital.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -8,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -25,6 +27,11 @@ public class PatientProfile {
   @JoinColumn(name = "user_id", nullable = false, unique = true)
   @JsonIgnore
   private AppUser user;
+
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "patient_record_id")
+  @JsonIgnoreProperties({"appointments", "diagnoses", "hibernateLazyInitializer", "handler"})
+  private Patient patient;
 
   @Column(name = "date_of_birth")
   private LocalDate dateOfBirth;
@@ -55,6 +62,14 @@ public class PatientProfile {
 
   public void setUser(AppUser user) {
     this.user = user;
+  }
+
+  public Patient getPatient() {
+    return patient;
+  }
+
+  public void setPatient(Patient patient) {
+    this.patient = patient;
   }
 
   public LocalDate getDateOfBirth() {

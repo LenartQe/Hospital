@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import com.hospital.entity.Patient;
 
 @Service
 public class AuthService {
@@ -21,6 +22,7 @@ public class AuthService {
 
   private final AppUserRepository appUserRepository;
   private final PatientProfileRepository patientProfileRepository;
+  private final PatientService patientService;
   private final DoctorRepository doctorRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
@@ -28,11 +30,13 @@ public class AuthService {
   public AuthService(
       AppUserRepository appUserRepository,
       PatientProfileRepository patientProfileRepository,
+      PatientService patientService,
       DoctorRepository doctorRepository,
       PasswordEncoder passwordEncoder,
       JwtService jwtService) {
     this.appUserRepository = appUserRepository;
     this.patientProfileRepository = patientProfileRepository;
+    this.patientService = patientService;
     this.doctorRepository = doctorRepository;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
@@ -109,9 +113,24 @@ public class AuthService {
   }
 
   private void ensurePatientProfile(AppUser user) {
-    if (patientProfileRepository.findByUserId(user.getId()).isEmpty()) {
-      PatientProfile profile = new PatientProfile();
-      profile.setUser(user);
+    PatientProfile profile =
+        patientProfileRepository
+            .findByUserId(user.getId())
+            .orElseGet(
+                () -> {
+                  PatientProfile created = new PatientProfile();
+                  created.setUser(user);
+                  return patientProfileRepository.save(created);
+                });
+    Patient patient = patientService.ensureForUser(user);
+    if (profile.getPatient() == null || !patient.getId().equals(profile.getPatient().getId())) {
+      profile.setPatient(patient);
+      if (patient.getBloodType() == null && profile.getBloodType() != null) {
+        patient.setBloodType(profile.getBloodType());
+      }
+      if (patient.getAllergies() == null && profile.getAllergies() != null) {
+        patient.setAllergies(profile.getAllergies());
+      }
       patientProfileRepository.save(profile);
     }
   }
@@ -121,19 +140,40 @@ public class AuthService {
       return;
     }
     Doctor doctor =
-        doctorRepository
-            .findByEmail(user.getEmail())
-            .or(() -> doctorRepository.findAll().stream().filter(d -> d.getUserId() == null).findFirst())
-            .or(() -> doctorRepository.findAll().stream().findFirst())
+        doctorRepository.findAll().stream()
+            .filter(d -> user.getEmail().equalsIgnoreCase(d.getEmail()))
+            .reduce(this::preferDoctorRecord)
             .orElseThrow(
                 () ->
                     new ResponseStatusException(
-                        HttpStatus.SERVICE_UNAVAILABLE, "Nuk ka profil mjeku në sistem."));
+                        HttpStatus.BAD_REQUEST,
+                        "Ky email nuk është i regjistruar si mjek. Zgjidhni një email nga lista e mjekëve."));
     doctor.setUserId(user.getId());
     if (doctor.getEmail() == null || doctor.getEmail().isBlank()) {
       doctor.setEmail(user.getEmail());
     }
     doctorRepository.save(doctor);
+  }
+
+  private Doctor preferDoctorRecord(Doctor current, Doctor candidate) {
+    if (isPreferredDoctorName(candidate.getFullName()) && !isPreferredDoctorName(current.getFullName())) {
+      return candidate;
+    }
+    if (!isPreferredDoctorName(candidate.getFullName()) && isPreferredDoctorName(current.getFullName())) {
+      return current;
+    }
+    return candidate.getId() != null && current.getId() != null && candidate.getId() > current.getId()
+        ? candidate
+        : current;
+  }
+
+  private boolean isPreferredDoctorName(String name) {
+    if (name == null) {
+      return false;
+    }
+    String normalized = name.trim();
+    return !normalized.regionMatches(true, 0, "Dr.", 0, 3)
+        && !normalized.regionMatches(true, 0, "Dr", 0, 2);
   }
 
   private AuthResult toAuthResult(AppUser user) {

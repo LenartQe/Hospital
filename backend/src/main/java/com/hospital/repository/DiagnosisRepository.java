@@ -8,9 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface DiagnosisRepository extends JpaRepository<Diagnosis, Long> {
-  List<Diagnosis> findByPatientIdOrderByDiagnosedAtDesc(Long patientId);
+  List<Diagnosis> findByPatientIdOrderByCreatedAtDesc(Long patientId);
 
-  List<Diagnosis> findByDoctorIdOrderByDiagnosedAtDesc(Long doctorId);
+  List<Diagnosis> findByDoctorIdOrderByCreatedAtDesc(Long doctorId);
+
+  long countByDoctorId(Long doctorId);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("DELETE FROM Diagnosis d WHERE d.doctor.id = :doctorId")

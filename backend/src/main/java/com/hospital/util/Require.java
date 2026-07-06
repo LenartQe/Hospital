@@ -40,4 +40,23 @@ public final class Require {
     }
     return value;
   }
+
+  public static <T> T nonNull(T value, String message) {
+    if (value == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+    }
+    return value;
+  }
+
+  public static String nonBlank(String value, String message) {
+    if (value == null || value.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+    }
+    return value.trim();
+  }
+
+  public static <T> T found(java.util.Optional<T> optional, String message) {
+    return optional.orElseThrow(
+        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, message));
+  }
 }

@@ -12,6 +12,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
+import jakarta.persistence.ConstraintMode;
+import jakarta.persistence.ForeignKey;
 
 @Entity
 @Table(name = "appointments")
@@ -43,8 +45,13 @@ public class Appointment {
   private Long patientProfileId;
 
   @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "patient_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+  @JsonIgnoreProperties({"appointments", "diagnoses", "hibernateLazyInitializer", "handler"})
+  private Patient patient;
+
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "doctor_id")
-  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+  @JsonIgnoreProperties({"appointments", "diagnoses", "hibernateLazyInitializer", "handler"})
   private Doctor doctor;
 
   @Column(name = "created_at")
@@ -112,6 +119,14 @@ public class Appointment {
 
   public void setPatientProfileId(Long patientProfileId) {
     this.patientProfileId = patientProfileId;
+  }
+
+  public Patient getPatient() {
+    return patient;
+  }
+
+  public void setPatient(Patient patient) {
+    this.patient = patient;
   }
 
   public Doctor getDoctor() {
