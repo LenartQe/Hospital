@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { clearAuth, getAuth } from "auth/authStorage";
 import PatientAvatar from "./components/PatientAvatar";
+import "./doctor-portal.css";
 
 const DOCTOR_MENU = [
   { id: "dashboard", label: "Paneli", route: "/doctor/dashboard", icon: LayoutDashboard },
@@ -99,22 +100,18 @@ export default function DoctorPortalLayout({ children, pageTitle }) {
   );
 
   return (
-    <div id="doctor-portal" className="flex min-h-screen bg-slate-100 font-sans antialiased">
-      {/* Desktop sidebar */}
-      <aside className="hidden w-[17rem] shrink-0 flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 shadow-xl lg:flex">
-        {navContent}
-      </aside>
+    <div id="doctor-portal" className="doctor-portal font-sans antialiased">
+      <aside className="doctor-portal__sidebar">{navContent}</aside>
 
-      {/* Mobile overlay */}
       {mobileOpen ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="doctor-portal__overlay lg:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"
+            className="doctor-portal__backdrop"
             onClick={() => setMobileOpen(false)}
             aria-label="Mbyll menunë"
           />
-          <aside className="relative flex h-full w-72 max-w-[88vw] flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 shadow-2xl">
+          <aside className="doctor-portal__drawer">
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
@@ -128,8 +125,8 @@ export default function DoctorPortalLayout({ children, pageTitle }) {
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-slate-200/90 bg-white/95 px-4 py-3.5 shadow-sm backdrop-blur-md lg:px-8">
+      <div className="doctor-portal__main">
+        <header className="doctor-portal__header sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-slate-200/90 bg-white/95 px-4 py-3.5 shadow-sm backdrop-blur-md lg:px-8">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -155,7 +152,7 @@ export default function DoctorPortalLayout({ children, pageTitle }) {
           </div>
         </header>
 
-        <main className="flex-1 bg-slate-50 p-4 lg:p-8">{children}</main>
+        <main className="doctor-portal__content bg-slate-50 p-4 lg:p-8">{children}</main>
       </div>
     </div>
   );

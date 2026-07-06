@@ -1,0 +1,94 @@
+/* Doctor portal shell — layout is plain CSS so it never depends on Tailwind/Bootstrap flex utilities */
+
+#doctor-portal.doctor-portal {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+#doctor-portal .doctor-portal__sidebar {
+  display: none;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 17rem;
+  min-height: 100vh;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  box-shadow: 4px 0 24px rgba(15, 23, 42, 0.12);
+  z-index: 40;
+}
+
+#doctor-portal .doctor-portal__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#doctor-portal .doctor-portal__header {
+  flex-shrink: 0;
+}
+
+#doctor-portal .doctor-portal__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 1024px) {
+  #doctor-portal .doctor-portal__sidebar {
+    display: flex;
+  }
+}
+
+#doctor-portal .doctor-portal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: stretch;
+}
+
+#doctor-portal .doctor-portal__drawer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 18rem;
+  max-width: 88vw;
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+}
+
+#doctor-portal .doctor-portal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+#doctor-portal .doctor-portal__sidebar button,
+#doctor-portal .doctor-portal__drawer button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
