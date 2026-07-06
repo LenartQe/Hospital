@@ -137,9 +137,10 @@ export default function App() {
     });
 
   const useCustomPatientPortal = auth?.role === "PATIENT" && pathname.startsWith("/patient");
+  const useCustomDoctorPortal = auth?.role === "DOCTOR" && pathname.startsWith("/doctor");
 
   const dashboardShell =
-    layout === "dashboard" && auth?.token && !useCustomPatientPortal ? (
+    layout === "dashboard" && auth?.token && !useCustomPatientPortal && !useCustomDoctorPortal ? (
       <Sidenav
         color={sidenavColor}
         brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
