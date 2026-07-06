@@ -1,6 +1,7 @@
 package com.hospital.controller;
 
 import com.hospital.dto.DoctorAppointmentDTO;
+import com.hospital.dto.DoctorPatientDTO;
 import com.hospital.dto.DoctorProfileDTO;
 import com.hospital.entity.Diagnosis;
 import com.hospital.entity.Medicine;
@@ -101,16 +102,8 @@ public class DoctorPortalController {
   }
 
   @GetMapping("/patients")
-  public List<PatientSummary> patients(Authentication authentication) {
-    return portalService.listPatientsForDoctor(Require.authUserId(authentication)).stream()
-        .map(
-            p ->
-                new PatientSummary(
-                    p.getId(),
-                    portalService.patientDisplayName(p),
-                    p.getEmail(),
-                    p.getPhoneNumber()))
-        .toList();
+  public List<DoctorPatientDTO> patients(Authentication authentication) {
+    return portalService.listPatientDetailsForDoctor(Require.authUserId(authentication));
   }
 
   @PostMapping("/patients/{patientId}/diagnoses")
@@ -138,17 +131,31 @@ public class DoctorPortalController {
   }
 
   @PostMapping("/patients/{patientId}/prescriptions")
-  public Prescription addPrescription(
+  public PrescriptionView addPrescription(
       Authentication authentication,
       @PathVariable Long patientId,
       @Valid @RequestBody PrescriptionRequest body) {
-    return portalService.createPrescription(
-        Require.authUserId(authentication),
-        patientId,
-        body.medicineId(),
-        body.dosage(),
-        body.frequency(),
-        body.instructions());
+    long userId = Require.authUserId(authentication);
+    Prescription saved =
+        portalService.createPrescription(
+            userId,
+            patientId,
+            body.medicineId(),
+            body.dosage(),
+            body.frequency(),
+            body.instructions());
+    String medicineName =
+        saved.getMedicine() != null && saved.getMedicine().getName() != null
+            ? saved.getMedicine().getName()
+            : "—";
+    return new PrescriptionView(
+        saved.getId(),
+        medicineName,
+        saved.getDosage(),
+        saved.getFrequency(),
+        portalService.patientDisplayName(saved.getPatient()),
+        saved.getStatus(),
+        saved.getPrescribedAt());
   }
 
   public record StatusBody(@NotBlank String status) {}
@@ -169,8 +176,6 @@ public class DoctorPortalController {
       String patientName,
       String status,
       java.time.Instant prescribedAt) {}
-
-  public record PatientSummary(Long id, String fullName, String email, String phone) {}
 
   public record DiagnosisRequest(@NotBlank String title, String description, String severity) {}
 

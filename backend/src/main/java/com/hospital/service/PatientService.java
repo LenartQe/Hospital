@@ -70,7 +70,24 @@ public class PatientService {
   public Patient ensureForUser(AppUser user) {
     return patientRepository
         .findByUserId(user.getId())
-        .orElseGet(() -> createForUser(user));
+        .orElseGet(
+            () -> {
+              if (user.getEmail() != null && !user.getEmail().isBlank()) {
+                return patientRepository
+                    .findByEmail(user.getEmail().trim().toLowerCase())
+                    .filter(p -> p.getUserId() == null)
+                    .map(
+                        p -> {
+                          p.setUserId(user.getId());
+                          if (user.getPhone() != null && !user.getPhone().isBlank()) {
+                            p.setPhoneNumber(user.getPhone());
+                          }
+                          return patientRepository.save(p);
+                        })
+                    .orElseGet(() -> createForUser(user));
+              }
+              return createForUser(user);
+            });
   }
 
   /** Links or creates a patient record for a public appointment booking. */

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Users, Activity, Pill, UserX } from "lucide-react";
+import { Users, Activity, Pill, UserX, Check, Ban, CalendarDays } from "lucide-react";
 import { hospitalApi, parseApiError } from "api/hospitalApi";
 import DoctorPortalLayout from "./DoctorPortalLayout";
 import PageHeader from "./components/PageHeader";
@@ -8,6 +8,7 @@ import MedicalCard from "./components/MedicalCard";
 import PatientAvatar from "./components/PatientAvatar";
 import PrimaryButton from "./components/PrimaryButton";
 import FormField from "./components/FormField";
+import StatusBadge from "./components/StatusBadge";
 
 export default function DoctorPatients() {
   const [searchParams] = useSearchParams();
@@ -46,8 +47,19 @@ export default function DoctorPatients() {
 
   const selectPatient = (id) => {
     setPatientId(String(id));
-    setMsg(`Pacienti u zgjodh. Mund të shtoni diagnozë ose recetë.`);
+    setMsg("Pacienti u zgjodh. Konfirmoni terminin, pastaj shtoni diagnozë ose recetë.");
     setError("");
+  };
+
+  const changeAppointmentStatus = (appointmentId, status) => {
+    hospitalApi.doctor
+      .updateAppointmentStatus(appointmentId, status)
+      .then(() => {
+        setMsg(status === "CONFIRMED" ? "Termini u konfirmua." : "Termini u refuzua.");
+        setError("");
+        load();
+      })
+      .catch((e) => setError(parseApiError(e)));
   };
 
   const submitDiagnosis = () => {
@@ -55,7 +67,7 @@ export default function DoctorPatients() {
     hospitalApi.doctor
       .addDiagnosis(patientId, { title: dxTitle, description: dxDesc, severity: "MODERATE" })
       .then(() => {
-        setMsg("Diagnoza u ruajt dhe shfaqet te Diagnozat e mia.");
+        setMsg("Diagnoza u ruajt. Pacienti e sheh në portalin e tyre.");
         setDxTitle("");
         setDxDesc("");
         setError("");
@@ -72,8 +84,9 @@ export default function DoctorPatients() {
         frequency,
         instructions: "",
       })
-      .then(() => {
-        setMsg("Receta u ruajt.");
+      .then((saved) => {
+        setMsg(`Receta u ruajt: ${saved.medicineName || "barna"}. Pacienti e sheh te Barnat dhe Fatura.`);
+        setMedId("");
         setDosage("");
         setFrequency("");
         setError("");
@@ -82,7 +95,11 @@ export default function DoctorPatients() {
   };
 
   const removePatient = (id) => {
-    if (!window.confirm("Të hiqet ky pacient nga lista juaj? Mund të rikthehet me termin të ri.")) {
+    if (
+      !window.confirm(
+        "Të hiqet ky pacient nga lista juaj? Terminet e tyre do të fshihen nga Terminet e mia."
+      )
+    ) {
       return;
     }
     hospitalApi.doctor
@@ -91,7 +108,7 @@ export default function DoctorPatients() {
         if (String(patientId) === String(id)) {
           setPatientId("");
         }
-        setMsg("Pacienti u hoq nga lista.");
+        setMsg("Pacienti u hoq dhe terminet u fshinë.");
         setError("");
         load();
       })
@@ -99,6 +116,8 @@ export default function DoctorPatients() {
   };
 
   const selectedPatient = patients.find((p) => String(p.id) === String(patientId));
+  const selectedAppointments = selectedPatient?.appointments || [];
+  const pendingAppointments = selectedAppointments.filter((a) => a.status === "PENDING");
 
   const patientOptions = [
     { value: "", label: "Zgjidhni pacientin..." },
@@ -107,14 +126,14 @@ export default function DoctorPatients() {
 
   const medicineOptions = [
     { value: "", label: "Zgjidhni barnën..." },
-    ...medicines.map((m) => ({ value: String(m.id), label: m.name })),
+    ...medicines.map((m) => ({ value: String(m.id), label: `${m.name} (${m.price ?? 0}€)` })),
   ];
 
   return (
     <DoctorPortalLayout pageTitle="Pacientët">
       <PageHeader
         title="Pacientët"
-        subtitle="Pacientët që kanë rezervuar termin me ju — klikoni për të zgjedhur"
+        subtitle="Pacientët që kanë rezervuar termin me ju — konfirmoni, diagnozoni, përshkruani barna"
         icon={Users}
       />
 
@@ -130,9 +149,56 @@ export default function DoctorPatients() {
       ) : null}
 
       {selectedPatient ? (
-        <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-          Pacienti i zgjedhur: <strong>{selectedPatient.fullName}</strong>
-          {selectedPatient.email ? ` (${selectedPatient.email})` : ""}
+        <div className="mb-4 space-y-3">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            Pacienti i zgjedhur: <strong>{selectedPatient.fullName}</strong>
+            {selectedPatient.email ? ` (${selectedPatient.email})` : ""}
+          </div>
+          {pendingAppointments.length > 0 ? (
+            <MedicalCard title="Konfirmo terminin" icon={CalendarDays}>
+              {pendingAppointments.map((a) => (
+                <div
+                  key={a.id}
+                  className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-3 last:mb-0"
+                >
+                  <div>
+                    <p className="font-medium text-slate-900">
+                      {a.preferredDate || "Data e papërcaktuar"}
+                    </p>
+                    <p className="text-xs text-slate-500">{a.message || "Pa mesazh"}</p>
+                    <StatusBadge status={a.status} />
+                  </div>
+                  <div className="flex gap-2">
+                    <PrimaryButton
+                      variant="success"
+                      className="!px-3 !py-1.5 text-xs"
+                      onClick={() => changeAppointmentStatus(a.id, "CONFIRMED")}
+                    >
+                      <Check size={14} />
+                      Prano
+                    </PrimaryButton>
+                    <PrimaryButton
+                      variant="danger"
+                      className="!px-3 !py-1.5 text-xs"
+                      onClick={() => changeAppointmentStatus(a.id, "REJECTED")}
+                    >
+                      <Ban size={14} />
+                      Refuzo
+                    </PrimaryButton>
+                  </div>
+                </div>
+              ))}
+            </MedicalCard>
+          ) : selectedAppointments.length > 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600">
+              Terminet:{" "}
+              {selectedAppointments.map((a) => (
+                <span key={a.id} className="mr-2 inline-flex items-center gap-1">
+                  {a.preferredDate || "—"} <StatusBadge status={a.status} />
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -147,6 +213,7 @@ export default function DoctorPatients() {
               ) : (
                 patients.map((p) => {
                   const selected = String(patientId) === String(p.id);
+                  const pending = (p.appointments || []).filter((a) => a.status === "PENDING").length;
                   return (
                     <div
                       key={p.id}
@@ -167,6 +234,11 @@ export default function DoctorPatients() {
                           {p.email ? (
                             <span className="mt-0.5 inline-block truncate rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
                               {p.email}
+                            </span>
+                          ) : null}
+                          {pending > 0 ? (
+                            <span className="mt-1 inline-block rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                              {pending} termin në pritje
                             </span>
                           ) : null}
                         </div>
@@ -222,7 +294,14 @@ export default function DoctorPatients() {
             </PrimaryButton>
           </MedicalCard>
 
-          <MedicalCard title="Përshkruaj barnë" icon={Pill}>
+          <MedicalCard title="Përshkruaj barnë (Recetë)" icon={Pill}>
+            <FormField
+              label="Pacienti"
+              as="select"
+              value={patientId}
+              onChange={(e) => setPatientId(e.target.value)}
+              options={patientOptions}
+            />
             <FormField
               label="Barna"
               as="select"
@@ -230,6 +309,11 @@ export default function DoctorPatients() {
               onChange={(e) => setMedId(e.target.value)}
               options={medicineOptions}
             />
+            {medicines.length === 0 ? (
+              <p className="mb-3 text-sm text-amber-700">
+                Nuk u ngarkuan barnat për specialitetin tuaj. Rinisni backend-in.
+              </p>
+            ) : null}
             <FormField
               label="Doza"
               value={dosage}

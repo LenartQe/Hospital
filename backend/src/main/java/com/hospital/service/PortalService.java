@@ -1,6 +1,7 @@
 package com.hospital.service;
 
 import com.hospital.dto.DoctorAppointmentDTO;
+import com.hospital.dto.DoctorPatientDTO;
 import com.hospital.dto.DoctorProfileDTO;
 import com.hospital.dto.PatientDashboardDto;
 import com.hospital.dto.PatientInvoiceLineDto;
@@ -95,6 +96,7 @@ public class PortalService {
     PatientProfile profile = requirePatientProfile(userId);
     AppUser user = Require.notNull(profile.getUser(), "Përdoruesi i pacientit");
     Patient patient = resolvePatient(profile, user);
+    assertPatientOwnedByUser(patient, userId);
     syncPatientRecords(profile, user, patient);
     Long patientId = Require.notNull(patient.getId(), "ID e pacientit");
 
@@ -102,10 +104,14 @@ public class PortalService {
     List<Prescription> prescriptions =
         prescriptionRepository.findByPatientIdOrderByPrescribedAtDesc(patientId);
     List<Appointment> appointments =
-        appointmentRepository.findByPatientIdOrderByCreatedAtDesc(patientId);
+        appointmentRepository.findByPatientIdOrderByCreatedAtDesc(patientId).stream()
+            .filter(a -> belongsToPatientAccount(a, userId, profile.getId()))
+            .toList();
     if (appointments.isEmpty() && profile.getId() != null) {
       appointments =
-          appointmentRepository.findByPatientProfileIdOrderByCreatedAtDesc(profile.getId());
+          appointmentRepository.findByPatientProfileIdOrderByCreatedAtDesc(profile.getId()).stream()
+              .filter(a -> belongsToPatientAccount(a, userId, profile.getId()))
+              .toList();
     }
     List<PatientInvoiceLineDto> invoiceLines = buildInvoiceLines(prescriptions);
     BigDecimal invoiceTotal =
@@ -256,6 +262,36 @@ public class PortalService {
     return medicineRepository.findBySpecialtyKeyOrderByNameAsc(resolveMedicineSpecialtyKey(doctor));
   }
 
+  public List<DoctorPatientDTO> listPatientDetailsForDoctor(Long userId) {
+    Doctor doctor = requireDoctorByUserId(userId);
+    Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
+    Set<Long> hidden = hiddenPatientIds(doctorId);
+    List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByCreatedAtDesc(doctorId);
+    Map<Long, Patient> byId = new LinkedHashMap<>();
+    Map<Long, List<DoctorAppointmentDTO>> apptsByPatient = new LinkedHashMap<>();
+    for (Appointment appointment : appointments) {
+      Patient patient = resolveAppointmentPatient(appointment);
+      if (patient == null || patient.getId() == null || hidden.contains(patient.getId())) {
+        continue;
+      }
+      byId.putIfAbsent(patient.getId(), patient);
+      apptsByPatient
+          .computeIfAbsent(patient.getId(), ignored -> new ArrayList<>())
+          .add(toAppointmentDto(appointment));
+    }
+    List<DoctorPatientDTO> result = new ArrayList<>();
+    for (Patient patient : byId.values()) {
+      result.add(
+          new DoctorPatientDTO(
+              patient.getId(),
+              patientDisplayName(patient),
+              patient.getEmail(),
+              patient.getPhoneNumber(),
+              apptsByPatient.getOrDefault(patient.getId(), List.of())));
+    }
+    return result;
+  }
+
   public List<Patient> listPatientsForDoctor(Long userId) {
     Doctor doctor = requireDoctorByUserId(userId);
     Long doctorId = Require.notNull(doctor.getId(), "ID e mjekut");
@@ -369,7 +405,8 @@ public class PortalService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Barna nuk u gjet."));
     String doctorKey = resolveMedicineSpecialtyKey(doctor);
     if (medicine.getSpecialtyKey() != null
-        && !doctorKey.equalsIgnoreCase(medicine.getSpecialtyKey())) {
+        && !doctorKey.equalsIgnoreCase(medicine.getSpecialtyKey())
+        && !"GENERAL".equalsIgnoreCase(medicine.getSpecialtyKey())) {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "Kjo barë nuk i përket specialitetit tuaj.");
     }
@@ -523,62 +560,77 @@ public class PortalService {
   }
 
   private Patient resolvePatient(PatientProfile profile, AppUser user) {
-    Patient patient = null;
+    Long uid = Require.notNull(user.getId(), "ID e përdoruesit");
+
+    Patient owned =
+        patientRepository
+            .findByUserId(uid)
+            .map(p -> syncProfilePatient(profile, p))
+            .orElse(null);
+    if (owned != null) {
+      return owned;
+    }
+
     if (user.getEmail() != null && !user.getEmail().isBlank()) {
       String email = user.getEmail().trim().toLowerCase();
-      patient =
+      Patient guest =
           patientRepository
               .findByEmail(email)
+              .filter(p -> p.getUserId() == null)
               .map(
-                  existing -> {
-                    if (existing.getUserId() == null || existing.getUserId().equals(user.getId())) {
-                      existing.setUserId(user.getId());
-                      if (user.getPhone() != null && !user.getPhone().isBlank()) {
-                        existing.setPhoneNumber(user.getPhone());
-                      }
-                      return patientRepository.save(existing);
+                  p -> {
+                    p.setUserId(uid);
+                    if (user.getPhone() != null && !user.getPhone().isBlank()) {
+                      p.setPhoneNumber(user.getPhone());
                     }
-                    return existing;
+                    return patientRepository.save(p);
                   })
               .orElse(null);
+      if (guest != null) {
+        return syncProfilePatient(profile, guest);
+      }
     }
-    if (patient == null && profile.getPatient() != null) {
-      patient = profile.getPatient();
+
+    if (profile.getPatient() != null) {
+      Patient profilePatient = profile.getPatient();
+      if (profilePatient.getUserId() == null || uid.equals(profilePatient.getUserId())) {
+        profilePatient.setUserId(uid);
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+          profilePatient.setEmail(user.getEmail().trim().toLowerCase());
+        }
+        return syncProfilePatient(profile, patientRepository.save(profilePatient));
+      }
     }
-    if (patient == null) {
-      patient = patientService.ensureForUser(user);
+
+    Patient created = patientService.createForUser(user);
+    return syncProfilePatient(profile, created);
+  }
+
+  private Patient syncProfilePatient(PatientProfile profile, Patient patient) {
+    if (profile.getPatient() == null
+        || !patient.getId().equals(profile.getPatient().getId())) {
+      profile.setPatient(patient);
+      patientProfileRepository.save(profile);
     }
-    if (profile.getPatient() != null && !profile.getPatient().getId().equals(patient.getId())) {
-      consolidatePatientRecords(profile.getPatient(), patient);
-    }
-    profile.setPatient(patient);
-    patientProfileRepository.save(profile);
     return patient;
   }
 
-  private void consolidatePatientRecords(Patient duplicate, Patient canonical) {
-    if (duplicate == null
-        || canonical == null
-        || duplicate.getId() == null
-        || canonical.getId() == null
-        || duplicate.getId().equals(canonical.getId())) {
-      return;
+  private void assertPatientOwnedByUser(Patient patient, Long userId) {
+    if (patient.getUserId() != null && !patient.getUserId().equals(userId)) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Ky profil pacienti nuk i përket kësaj llogarie.");
     }
-    for (Diagnosis diagnosis :
-        diagnosisRepository.findByPatientIdOrderByCreatedAtDesc(duplicate.getId())) {
-      diagnosis.setPatient(canonical);
-      diagnosisRepository.save(diagnosis);
+  }
+
+  private boolean belongsToPatientAccount(Appointment appointment, Long userId, Long profileId) {
+    Patient ap = appointment.getPatient();
+    if (ap != null && ap.getUserId() != null) {
+      return ap.getUserId().equals(userId);
     }
-    for (Prescription prescription :
-        prescriptionRepository.findByPatientIdOrderByPrescribedAtDesc(duplicate.getId())) {
-      prescription.setPatient(canonical);
-      prescriptionRepository.save(prescription);
+    if (profileId != null && profileId.equals(appointment.getPatientProfileId())) {
+      return true;
     }
-    for (Appointment appointment :
-        appointmentRepository.findByPatientIdOrderByCreatedAtDesc(duplicate.getId())) {
-      appointment.setPatient(canonical);
-      appointmentRepository.save(appointment);
-    }
+    return ap == null || ap.getUserId() == null;
   }
 
   private Patient resolvePatientById(long patientOrProfileId) {
@@ -596,6 +648,7 @@ public class PortalService {
   }
 
   private void syncPatientRecords(PatientProfile profile, AppUser user, Patient patient) {
+    assertPatientOwnedByUser(patient, user.getId());
     boolean patientUpdated = false;
     if ((patient.getEmail() == null || patient.getEmail().isBlank())
         && user.getEmail() != null
@@ -609,22 +662,13 @@ public class PortalService {
       patient.setPhoneNumber(user.getPhone());
       patientUpdated = true;
     }
+    if (patient.getUserId() == null) {
+      patient.setUserId(user.getId());
+      patientUpdated = true;
+    }
     if (patientUpdated) {
       patientRepository.save(patient);
     }
-
-    patientRepository
-        .findByEmail(user.getEmail())
-        .filter(existing -> existing.getUserId() == null)
-        .ifPresent(
-            existing -> {
-              existing.setUserId(user.getId());
-              patientRepository.save(existing);
-              if (profile.getPatient() == null || !existing.getId().equals(profile.getPatient().getId())) {
-                profile.setPatient(existing);
-                patientProfileRepository.save(profile);
-              }
-            });
 
     if (user.getEmail() != null && !user.getEmail().isBlank()) {
       for (Appointment appointment :
@@ -642,6 +686,12 @@ public class PortalService {
 
   private void linkAppointmentToPatientRecord(
       Appointment appointment, PatientProfile profile, Patient patient) {
+    Patient existing = appointment.getPatient();
+    if (existing != null
+        && existing.getUserId() != null
+        && !existing.getUserId().equals(patient.getUserId())) {
+      return;
+    }
     boolean changed = false;
     if (appointment.getPatient() == null
         || !patient.getId().equals(appointment.getPatient().getId())) {

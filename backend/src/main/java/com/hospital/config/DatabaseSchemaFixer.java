@@ -53,6 +53,8 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
         jdbcTemplate.execute("ALTER TABLE diagnoses MODIFY title VARCHAR(300) NULL");
       }
       log.info("Schema OK: diagnoses.diagnosis_name");
+      jdbcTemplate.execute(
+          "DELETE FROM diagnoses WHERE diagnosis_name LIKE 'Test Diagnosis%'");
     } catch (Exception e) {
       log.warn("Could not fix diagnoses table: {}", e.getMessage());
     }
