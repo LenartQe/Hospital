@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { hospitalApi } from "api/hospitalApi";
 
 export default function Appointment() {
+  const [searchParams] = useSearchParams();
   const [doctors, setDoctors] = useState([]);
   const [form, setForm] = useState({
     patientName: "",
@@ -19,10 +21,17 @@ export default function Appointment() {
       .list()
       .then((list) => {
         setDoctors(list);
-        if (list[0]) setForm((f) => ({ ...f, doctorId: String(list[0].id) }));
+        const fromUrl = searchParams.get("doctorId");
+        const initial =
+          fromUrl && list.some((d) => String(d.id) === String(fromUrl))
+            ? fromUrl
+            : list[0]
+              ? String(list[0].id)
+              : "";
+        if (initial) setForm((f) => ({ ...f, doctorId: initial }));
       })
       .catch(() => setErr("Nuk u ngarkuan mjekët."));
-  }, []);
+  }, [searchParams]);
 
   const submit = (e) => {
     e.preventDefault();

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, Mail, Phone, Check, X, User } from "lucide-react";
+import { CalendarDays, Mail, Phone, Check, X, User, Ban } from "lucide-react";
 import { hospitalApi, parseApiError } from "api/hospitalApi";
 import DoctorPortalLayout from "./DoctorPortalLayout";
 import PageHeader from "./components/PageHeader";
@@ -101,7 +101,7 @@ export default function DoctorAppointments() {
                     <p className="rounded-lg bg-slate-50 px-3 py-2 text-slate-500">{r.message}</p>
                   ) : null}
                 </div>
-                {(r.status === "PENDING" || r.status === "CONFIRMED") && (
+                {r.status === "PENDING" ? (
                   <div className="flex flex-wrap gap-2">
                     {r.patientId ? (
                       <PrimaryButton
@@ -113,14 +113,33 @@ export default function DoctorAppointments() {
                         Shiko pacientin
                       </PrimaryButton>
                     ) : null}
-                    {r.status === "PENDING" ? (
+                    <PrimaryButton
+                      variant="success"
+                      className="flex-1 text-xs"
+                      onClick={() => changeStatus(r.id, "CONFIRMED")}
+                    >
+                      <Check size={14} />
+                      Prano
+                    </PrimaryButton>
+                    <PrimaryButton
+                      variant="danger"
+                      className="flex-1 text-xs"
+                      onClick={() => changeStatus(r.id, "REJECTED")}
+                    >
+                      <Ban size={14} />
+                      Refuzo
+                    </PrimaryButton>
+                  </div>
+                ) : r.status === "CONFIRMED" ? (
+                  <div className="flex flex-wrap gap-2">
+                    {r.patientId ? (
                       <PrimaryButton
-                        variant="success"
+                        variant="ghost"
                         className="flex-1 text-xs"
-                        onClick={() => changeStatus(r.id, "CONFIRMED")}
+                        onClick={() => openPatient(r.patientId)}
                       >
-                        <Check size={14} />
-                        Prano
+                        <User size={14} />
+                        Shiko pacientin
                       </PrimaryButton>
                     ) : null}
                     <PrimaryButton
@@ -132,7 +151,7 @@ export default function DoctorAppointments() {
                       Anulo
                     </PrimaryButton>
                   </div>
-                )}
+                ) : null}
               </div>
             ))}
           </div>
@@ -182,16 +201,26 @@ export default function DoctorAppointments() {
                           </PrimaryButton>
                         ) : null}
                         {r.status === "PENDING" ? (
-                          <PrimaryButton
-                            variant="success"
-                            className="!px-3 !py-1.5 text-xs"
-                            onClick={() => changeStatus(r.id, "CONFIRMED")}
-                          >
-                            <Check size={14} />
-                            Prano
-                          </PrimaryButton>
+                          <>
+                            <PrimaryButton
+                              variant="success"
+                              className="!px-3 !py-1.5 text-xs"
+                              onClick={() => changeStatus(r.id, "CONFIRMED")}
+                            >
+                              <Check size={14} />
+                              Prano
+                            </PrimaryButton>
+                            <PrimaryButton
+                              variant="danger"
+                              className="!px-3 !py-1.5 text-xs"
+                              onClick={() => changeStatus(r.id, "REJECTED")}
+                            >
+                              <Ban size={14} />
+                              Refuzo
+                            </PrimaryButton>
+                          </>
                         ) : null}
-                        {(r.status === "PENDING" || r.status === "CONFIRMED") && (
+                        {r.status === "CONFIRMED" ? (
                           <PrimaryButton
                             variant="danger"
                             className="!px-3 !py-1.5 text-xs"
@@ -200,7 +229,7 @@ export default function DoctorAppointments() {
                             <X size={14} />
                             Anulo
                           </PrimaryButton>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   </tr>

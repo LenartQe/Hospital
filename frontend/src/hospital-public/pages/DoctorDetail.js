@@ -54,7 +54,7 @@ export default function DoctorDetail() {
               <strong>Telefoni:</strong> {doc.phone || "—"}
             </p>
             <p>{doc.bio}</p>
-            <Link to="/appointment" className="btn btn-main mt-2">
+            <Link to={`/appointment?doctorId=${doc.id}`} className="btn btn-main mt-2">
               Rezervo terminin
             </Link>
           </div>

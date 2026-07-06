@@ -78,6 +78,7 @@ export default function SignIn() {
         email: loginEmail,
         password: password || "hospital123",
         role,
+        doctorId: role === "DOCTOR" ? selectedDoctorId : undefined,
       });
       setAuth(data);
       navigate(homeRouteForRole(data.role));
