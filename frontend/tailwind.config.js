@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  important: "#doctor-portal",
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
@@ -16,10 +17,17 @@ module.exports = {
         card: "0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)",
         "card-hover": "0 4px 12px 0 rgb(0 0 0 / 0.08)",
       },
+      fontFamily: {
+        sans: [
+          "Inter",
+          "Segoe UI",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "sans-serif",
+        ],
+      },
     },
   },
   plugins: [],
-  corePlugins: {
-    preflight: false,
-  },
 };

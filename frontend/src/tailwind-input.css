@@ -1,6 +1,25 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  #doctor-portal,
+  #doctor-portal * {
+    box-sizing: border-box;
+  }
+
+  #doctor-portal button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  #doctor-portal img {
+    display: block;
+    max-width: 100%;
+  }
+}
 
 @layer components {
   .doctor-portal-input {
