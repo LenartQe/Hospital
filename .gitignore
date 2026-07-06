@@ -30,3 +30,6 @@ Thumbs.db
 /package.json
 /package-lock.json
 /tools/
+
+# Generated Tailwind CSS (rebuilt via npm install / npm start / npm run build)
+frontend/src/tailwind-output.css
