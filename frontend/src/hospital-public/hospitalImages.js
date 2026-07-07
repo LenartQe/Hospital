@@ -17,8 +17,8 @@ export const DOCTOR_PFP_FALLBACK = DOCTOR_PFP.lenart;
 /** Primary + fallback URLs per service title. */
 export const SERVICE_IMAGES = {
   Ambulanca: [
+    "/images/hospital/ambulanca.png",
     "https://images.unsplash.com/photo-1584433144859-1fc3ab64a957?w=600&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop",
   ],
   Emergjenca: [
     "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=600&h=400&fit=crop",
@@ -29,8 +29,8 @@ export const SERVICE_IMAGES = {
     "https://images.unsplash.com/photo-1584308664894-6d0f743df229?w=600&h=400&fit=crop",
   ],
   Diagnostika: [
+    "/images/hospital/diagnostika.png",
     "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1631815589968-fdb216a47b94?w=600&h=400&fit=crop",
   ],
 };
 
