@@ -9,8 +9,7 @@ import "../hospital-site.css";
 
 const IMG_BUILDING =
   "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=1200&h=600&fit=crop";
-const IMG_RECEPTION =
-  "https://images.unsplash.com/photo-1586773866418-d27a676df198?w=800&h=500&fit=crop";
+const IMG_RECEPTION = "/images/hospital/recepsion.png";
 
 export default function Contact() {
   const telHref = `tel:${CONTACT_PHONE_TEL}`;
