@@ -1,7 +1,9 @@
 package com.hospital.service;
 
+import com.hospital.config.AuthDataInitializer;
 import com.hospital.entity.AppUser;
 import com.hospital.entity.Doctor;
+import com.hospital.entity.Patient;
 import com.hospital.entity.PatientProfile;
 import com.hospital.entity.UserRole;
 import com.hospital.repository.AppUserRepository;
@@ -15,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import com.hospital.entity.Patient;
 
 @Service
 public class AuthService {
@@ -47,7 +48,6 @@ public class AuthService {
     this.jwtService = jwtService;
   }
 
-  /** Open login: any email/password accepted; creates account if missing (except admin — single account). */
   public AuthResult login(String email, String password, UserRole expectedRole, Long doctorId) {
     if (expectedRole == UserRole.ADMIN) {
       AppUser admin =
@@ -56,40 +56,129 @@ public class AuthService {
               .orElseThrow(
                   () ->
                       new ResponseStatusException(
-                          HttpStatus.SERVICE_UNAVAILABLE, "Llogaria e administratorit nuk është konfiguruar."));
+                          HttpStatus.SERVICE_UNAVAILABLE,
+                          "Llogaria e administratorit nuk është konfiguruar."));
       return toAuthResult(admin);
     }
 
-    String normalized = normalizeEmail(email, expectedRole);
-    AppUser user =
-        appUserRepository
-            .findByEmailAndRole(normalized, expectedRole)
-            .orElseGet(() -> createGuestUser(normalized, expectedRole));
-
     if (expectedRole == UserRole.DOCTOR) {
-      ensureDoctorLinked(user, doctorId);
-    } else if (expectedRole == UserRole.PATIENT) {
-      ensurePatientProfile(user);
+      return loginDoctor(email, password, doctorId);
     }
 
+    if (expectedRole == UserRole.PATIENT) {
+      return loginPatient(email, password);
+    }
+
+    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Roli nuk mbështetet.");
+  }
+
+  private AuthResult loginPatient(String email, String password) {
+    String normalized = normalizeEmail(email, UserRole.PATIENT);
+    Optional<AppUser> existing = appUserRepository.findByEmail(normalized);
+
+    if (existing.isPresent()) {
+      AppUser user = existing.get();
+      if (user.getRole() != UserRole.PATIENT) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            "Ky email përdoret për llogari mjeku ose administratori. Hyni nga skeda e duhur.");
+      }
+      verifyPatientPassword(user, password);
+      ensurePatientProfile(user);
+      return toAuthResult(user);
+    }
+
+    AppUser user = new AppUser();
+    user.setEmail(normalized);
+    user.setPasswordHash(passwordEncoder.encode(effectivePatientPassword(password)));
+    user.setRole(UserRole.PATIENT);
+    user.setFullName(nameFromEmail(normalized));
+    user = appUserRepository.save(user);
+    ensurePatientProfile(user);
+    return toAuthResult(user);
+  }
+
+  private AuthResult loginDoctor(String email, String password, Long doctorId) {
+    if (email == null || email.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Zgjidhni mjekun nga lista.");
+    }
+    if (password == null || password.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Fjalëkalimi është i detyrueshëm.");
+    }
+    String normalized = email.trim().toLowerCase();
+    AppUser user =
+        appUserRepository
+            .findByEmail(normalized)
+            .filter(u -> u.getRole() == UserRole.DOCTOR)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Email-i ose fjalëkalimi është i gabuar."));
+    if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+      throw new ResponseStatusException(
+          HttpStatus.UNAUTHORIZED, "Email-i ose fjalëkalimi është i gabuar.");
+    }
+    ensureDoctorLinked(user, doctorId);
     return toAuthResult(user);
   }
 
   public AuthResult registerPatient(String email, String password, String fullName, String phone) {
-    String normalized = normalizeEmail(email, UserRole.PATIENT);
-    Optional<AppUser> existing = appUserRepository.findByEmailAndRole(normalized, UserRole.PATIENT);
-    if (existing.isPresent()) {
-      return toAuthResult(existing.get());
+    if (email == null || email.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email-i është i detyrueshëm.");
     }
+    if (password == null || password.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Fjalëkalimi është i detyrueshëm.");
+    }
+
+    String normalized = normalizeEmail(email, UserRole.PATIENT);
+    Optional<AppUser> existing = appUserRepository.findByEmail(normalized);
+    if (existing.isPresent()) {
+      AppUser user = existing.get();
+      if (user.getRole() != UserRole.PATIENT) {
+        throw new ResponseStatusException(
+            HttpStatus.CONFLICT,
+            "Ky email është i regjistruar si mjek ose administrator. Përdorni një email tjetër.");
+      }
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "Ky email ekziston tashmë. Hyni me fjalëkalimin tuaj.");
+    }
+
     AppUser user = new AppUser();
     user.setEmail(normalized);
-    user.setPasswordHash(passwordEncoder.encode(GUEST_PASSWORD));
+    user.setPasswordHash(passwordEncoder.encode(password));
     user.setRole(UserRole.PATIENT);
-    user.setFullName(fullName != null && !fullName.isBlank() ? fullName.trim() : nameFromEmail(normalized));
+    user.setFullName(
+        fullName != null && !fullName.isBlank() ? fullName.trim() : nameFromEmail(normalized));
     user.setPhone(phone);
     user = appUserRepository.save(user);
     ensurePatientProfile(user);
     return toAuthResult(user);
+  }
+
+  private void verifyPatientPassword(AppUser user, String password) {
+    String attempt = effectivePatientPassword(password);
+    if (passwordEncoder.matches(attempt, user.getPasswordHash())) {
+      return;
+    }
+    if (passwordEncoder.matches(GUEST_PASSWORD, user.getPasswordHash())) {
+      return;
+    }
+    if (passwordEncoder.matches(AuthDataInitializer.DEMO_PASSWORD, user.getPasswordHash())
+        && (password == null
+            || password.isBlank()
+            || AuthDataInitializer.DEMO_PASSWORD.equals(password)
+            || GUEST_PASSWORD.equals(attempt))) {
+      return;
+    }
+    throw new ResponseStatusException(
+        HttpStatus.UNAUTHORIZED, "Email-i ose fjalëkalimi është i gabuar.");
+  }
+
+  private String effectivePatientPassword(String password) {
+    if (password == null || password.isBlank()) {
+      return GUEST_PASSWORD;
+    }
+    return password;
   }
 
   private String normalizeEmail(String email, UserRole role) {
@@ -106,15 +195,6 @@ public class AuthService {
   private String nameFromEmail(String email) {
     String local = email.contains("@") ? email.substring(0, email.indexOf('@')) : email;
     return local.replace('.', ' ').replace('-', ' ');
-  }
-
-  private AppUser createGuestUser(String email, UserRole role) {
-    AppUser user = new AppUser();
-    user.setEmail(email);
-    user.setPasswordHash(passwordEncoder.encode(GUEST_PASSWORD));
-    user.setRole(role);
-    user.setFullName(nameFromEmail(email));
-    return appUserRepository.save(user);
   }
 
   private void ensurePatientProfile(AppUser user) {

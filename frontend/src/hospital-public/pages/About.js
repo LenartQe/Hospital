@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
+import FallbackImage from "../components/FallbackImage";
+import { HOSPITAL_EXTERIOR, SERVICE_IMAGES } from "../hospitalImages";
 
-const IMG_HOSPITAL =
-  "https://images.unsplash.com/photo-1519494021062-688a284c42cd?w=1200&h=700&fit=crop";
 const IMG_TEAM =
   "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=900&h=600&fit=crop";
 const IMG_TECH =
@@ -29,7 +29,11 @@ export default function About() {
               </p>
             </div>
             <div className="col-lg-6">
-              <img src={IMG_HOSPITAL} alt="Spitali i Prizrenit" className="hospital-content-img rounded" />
+              <FallbackImage
+                sources={[HOSPITAL_EXTERIOR, IMG_TECH]}
+                alt="Spitali i Prizrenit — ndërtesa kryesore"
+                className="hospital-content-img hospital-about-hero-img rounded"
+              />
             </div>
           </div>
         </div>
@@ -62,9 +66,66 @@ export default function About() {
 
       <section className="section">
         <div className="container">
+          <div className="row justify-content-center mb-4">
+            <div className="col-lg-8 text-center">
+              <h3 className="mb-2">Barnatorja &amp; Diagnostika</h3>
+              <p className="text-muted mb-0">
+                Dy shërbime që lidhin vizitën te mjeku me trajtimin e vazhdueshëm të pacientit.
+              </p>
+            </div>
+          </div>
+          <div className="row">
+            <div className="col-lg-6 mb-4 mb-lg-0">
+              <article className="hospital-about-service-card h-100">
+                <FallbackImage
+                  sources={SERVICE_IMAGES.Barnatorja}
+                  alt="Barnatorja — barnë"
+                  className="hospital-about-service-card__img"
+                />
+                <div className="hospital-about-service-card__body">
+                  <h4 className="mb-2">
+                    <i className="icofont-drug hospital-service-detail__icon mr-2" />
+                    Barnatorja
+                  </h4>
+                  <p className="mb-0">
+                    Dispensim i barnave sipas recetës — çmimet dhe stoku janë të lidhura me
+                    portalin e pacientit dhe faturën e pagesës.
+                  </p>
+                </div>
+              </article>
+            </div>
+            <div className="col-lg-6">
+              <article className="hospital-about-service-card h-100">
+                <FallbackImage
+                  sources={SERVICE_IMAGES.Diagnostika}
+                  alt="Diagnostika — mjek duke shkruar"
+                  className="hospital-about-service-card__img"
+                />
+                <div className="hospital-about-service-card__body">
+                  <h4 className="mb-2">
+                    <i className="icofont-laboratory hospital-service-detail__icon mr-2" />
+                    Diagnostika
+                  </h4>
+                  <p className="mb-0">
+                    Analiza laboratorike dhe dokumentim i rezultateve — mjeku regjistron gjetjet
+                    direkt në kartelën tuaj digjitale.
+                  </p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
           <div className="row align-items-center mb-5">
             <div className="col-lg-6 order-lg-2 mb-4 mb-lg-0">
-              <img src={IMG_TEAM} alt="Ekipi mjekësor" className="hospital-content-img rounded" />
+              <FallbackImage
+                sources={[IMG_TEAM, HOSPITAL_EXTERIOR]}
+                alt="Ekipi mjekësor"
+                className="hospital-content-img rounded"
+              />
             </div>
             <div className="col-lg-6 order-lg-1">
               <h3 className="mb-3">Misioni ynë</h3>
@@ -83,7 +144,11 @@ export default function About() {
 
           <div className="row align-items-center">
             <div className="col-lg-6 mb-4 mb-lg-0">
-              <img src={IMG_TECH} alt="Teknologji mjekësore" className="hospital-content-img rounded" />
+              <FallbackImage
+                sources={[IMG_TECH, HOSPITAL_EXTERIOR]}
+                alt="Teknologji mjekësore"
+                className="hospital-content-img rounded"
+              />
             </div>
             <div className="col-lg-6">
               <h3 className="mb-3">Teknologji &amp; transparencë</h3>

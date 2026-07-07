@@ -1,8 +1,10 @@
+import FallbackImage from "../components/FallbackImage";
+import { SERVICE_IMAGES } from "../hospitalImages";
+
 const SERVICES = [
   {
     title: "Ambulanca",
     icon: "icofont-ambulance-cross",
-    image: "https://images.unsplash.com/photo-1584433144859-1fc3ab64a957?w=600&h=400&fit=crop",
     summary: "Transport dhe stabilizim i pacientit drejt spitalit.",
     details: [
       "Ekip i trajnuar me mjek dhe infermier në çdo mision",
@@ -14,7 +16,6 @@ const SERVICES = [
   {
     title: "Emergjenca",
     icon: "icofont-heart-beat-alt",
-    image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=600&h=400&fit=crop",
     summary: "Triage, stabilizim dhe trajtim i rasteve urgjente 24/7.",
     details: [
       "Pranim i pacientëve pa termin — prioritet sipas rrezikshmërisë",
@@ -26,7 +27,6 @@ const SERVICES = [
   {
     title: "Barnatorja",
     icon: "icofont-drug",
-    image: "https://images.unsplash.com/photo-1587854691652-5c2515b4c952?w=600&h=400&fit=crop",
     summary: "Dispensim i barnave sipas recetës së mjekut tuaj.",
     details: [
       "Stok i monitoruar në kohë reale nga administrata",
@@ -38,7 +38,6 @@ const SERVICES = [
   {
     title: "Diagnostika",
     icon: "icofont-laboratory",
-    image: "https://images.unsplash.com/photo-1579154204601-01588a147a9f?w=600&h=400&fit=crop",
     summary: "Analiza laboratorike dhe referime ndër-departamentale.",
     details: [
       "Laborator me analiza të rutinës dhe të urgjencës",
@@ -70,7 +69,11 @@ export default function Services() {
           {SERVICES.map((s) => (
             <div key={s.title} className="col-lg-6 mb-4">
               <article className="hospital-service-detail h-100">
-                <img src={s.image} alt={s.title} className="hospital-service-detail__img" loading="lazy" />
+                <FallbackImage
+                  sources={SERVICE_IMAGES[s.title]}
+                  alt={s.title}
+                  className="hospital-service-detail__img"
+                />
                 <div className="hospital-service-detail__body">
                   <div className="d-flex align-items-center gap-2 mb-2">
                     <i className={`${s.icon} hospital-service-detail__icon`} />

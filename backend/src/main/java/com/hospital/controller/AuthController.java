@@ -1,6 +1,6 @@
 package com.hospital.controller;
 
-import com.hospital.config.AuthDataInitializer;
+import com.hospital.service.DoctorCredentialService;
 import com.hospital.entity.UserRole;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.service.AuthService;
@@ -21,15 +21,23 @@ public class AuthController {
 
   private final AuthService authService;
   private final DoctorRepository doctorRepository;
+  private final DoctorCredentialService doctorCredentialService;
 
-  public AuthController(AuthService authService, DoctorRepository doctorRepository) {
+  public AuthController(
+      AuthService authService,
+      DoctorRepository doctorRepository,
+      DoctorCredentialService doctorCredentialService) {
     this.authService = authService;
     this.doctorRepository = doctorRepository;
+    this.doctorCredentialService = doctorCredentialService;
   }
 
   @GetMapping("/doctor-emails")
   public List<DoctorLoginOption> doctorEmails() {
-    return DoctorCatalog.publicDoctors(doctorRepository.findByFeaturedTrueOrderByNameAsc()).stream()
+    List<com.hospital.entity.Doctor> doctors =
+        DoctorCatalog.publicDoctors(doctorRepository.findByFeaturedTrueOrderByNameAsc());
+    doctors.forEach(doctorCredentialService::ensureLoginAccount);
+    return doctors.stream()
         .map(
             d ->
                 new DoctorLoginOption(
@@ -38,7 +46,7 @@ public class AuthController {
                     d.getEmail().trim().toLowerCase(),
                     d.getSpecialty(),
                     d.getImageUrl(),
-                    AuthDataInitializer.DEMO_PASSWORD))
+                    d.getLoginPassword()))
         .toList();
   }
 
@@ -53,11 +61,7 @@ public class AuthController {
     return authService.registerPatient(body.email(), body.password(), body.fullName(), body.phone());
   }
 
-  public record LoginRequest(
-      @NotBlank @Email String email,
-      @NotBlank String password,
-      @NotBlank String role,
-      Long doctorId) {}
+  public record LoginRequest(String email, String password, @NotBlank String role, Long doctorId) {}
 
   public record RegisterPatientRequest(
       @NotBlank @Email String email,

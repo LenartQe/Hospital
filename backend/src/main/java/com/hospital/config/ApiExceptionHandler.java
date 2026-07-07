@@ -34,11 +34,12 @@ public class ApiExceptionHandler {
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<Map<String, String>> handleIntegrity(DataIntegrityViolationException ex) {
     log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
-    return ResponseEntity.status(HttpStatus.CONFLICT)
-        .body(
-            Map.of(
-                "message",
-                "Nuk mund të fshihet: ka të dhëna të lidhura në sistem. Provoni përsëri pas rifillimit të serverit."));
+    String detail = ex.getMostSpecificCause().getMessage();
+    String message =
+        detail != null && detail.toLowerCase().contains("duplicate")
+            ? "Ky email ekziston tashmë në sistem. Përdorni një email tjetër ose hyni."
+            : "Nuk mund të ruhen të dhënat: ka konflikt në sistem.";
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", message));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

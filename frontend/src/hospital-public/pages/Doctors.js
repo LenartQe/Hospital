@@ -1,30 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { hospitalApi } from "api/hospitalApi";
-
-const FALLBACK_IMG =
-  "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face";
-
-/** Unique public pfps when API image is missing or fails to load. */
-const LOCAL_PFP = {
-  sara: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop&crop=face",
-  kadri: "https://images.unsplash.com/photo-1622253692010-21aabed25171?w=400&h=400&fit=crop&crop=face",
-  emir: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face",
-  lenart: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face",
-  mimoza: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face",
-  blerdon: "https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=400&h=400&fit=crop&crop=face",
-};
-
-function pfpForDoctor(doc) {
-  const name = (doc.fullName || "").toLowerCase();
-  if (name.includes("sara")) return LOCAL_PFP.sara;
-  if (name.includes("kadri")) return LOCAL_PFP.kadri;
-  if (name.includes("emir")) return LOCAL_PFP.emir;
-  if (name.includes("lenart")) return LOCAL_PFP.lenart;
-  if (name.includes("mimoza")) return LOCAL_PFP.mimoza;
-  if (name.includes("blerdon")) return LOCAL_PFP.blerdon;
-  return doc.imageUrl || FALLBACK_IMG;
-}
+import { DOCTOR_PFP_FALLBACK, doctorPhoto } from "../hospitalImages";
 
 function dedupeDoctors(list) {
   const byEmail = new Map();
@@ -40,7 +17,7 @@ function dedupeDoctors(list) {
 }
 
 function DoctorCard({ doc }) {
-  const [imgSrc, setImgSrc] = useState(pfpForDoctor(doc));
+  const [imgSrc, setImgSrc] = useState(doctorPhoto(doc));
 
   return (
     <div className="col-lg-4 col-md-6 mb-4">
@@ -51,7 +28,7 @@ function DoctorCard({ doc }) {
             alt={doc.fullName}
             className="hospital-doctor-card__photo"
             loading="lazy"
-            onError={() => setImgSrc(FALLBACK_IMG)}
+            onError={() => setImgSrc(DOCTOR_PFP_FALLBACK)}
           />
         </div>
         <div className="hospital-doctor-card__body text-center">

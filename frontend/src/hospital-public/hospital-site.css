@@ -188,3 +188,301 @@
 .hospital-services-page {
   padding-bottom: 4rem;
 }
+
+/* ——— About hero hospital photo ——— */
+.hospital-about-hero-img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+}
+
+/* ——— Department cards ——— */
+.hospital-departments-page {
+  padding-bottom: 4rem;
+}
+
+.hospital-dept-card {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 28px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.hospital-dept-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.12);
+}
+
+.hospital-dept-card__media {
+  position: relative;
+  height: 180px;
+  overflow: hidden;
+}
+
+.hospital-dept-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hospital-dept-card__icon-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1a73e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.hospital-dept-card__body {
+  padding: 1.35rem 1.5rem 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.hospital-dept-card__title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.hospital-dept-card__desc {
+  color: #64748b;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  flex: 1;
+  margin-bottom: 0.75rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hospital-dept-card__location {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.hospital-dept-card__link {
+  color: #1a73e8;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  margin-top: auto;
+}
+
+.hospital-dept-card__link:hover {
+  color: #1557b0;
+  text-decoration: none;
+}
+
+/* Department detail hero */
+.hospital-dept-hero {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 280px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.1);
+}
+
+.hospital-dept-hero__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hospital-dept-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.75) 0%, transparent 60%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.5rem 2rem;
+}
+
+.hospital-dept-hero__badge {
+  position: static;
+  margin-bottom: 0.75rem;
+}
+
+.hospital-dept-hero__title {
+  color: #fff;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.hospital-dept-detail-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+}
+
+.hospital-dept-doctor-link {
+  display: block;
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #0f172a;
+  transition: background 0.15s ease;
+}
+
+.hospital-dept-doctor-link:hover {
+  background: #eff6ff;
+  text-decoration: none;
+  color: #1a73e8;
+}
+
+.hospital-dept-card__img--diagram,
+.hospital-dept-hero__img.hospital-dept-card__img--diagram {
+  object-fit: contain;
+  background: #f1f5f9;
+  padding: 10px;
+}
+
+/* ——— About service highlight cards ——— */
+.hospital-about-service-card {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 28px rgba(15, 23, 42, 0.08);
+}
+
+.hospital-about-service-card__img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+.hospital-about-service-card__img[src*="barnatorja-pills"],
+.hospital-service-detail__img[src*="barnatorja-pills"] {
+  object-position: right center;
+}
+
+.hospital-about-service-card__body {
+  padding: 1.35rem 1.5rem 1.5rem;
+}
+
+/* ——— Appointment page ——— */
+.hospital-appointment-page {
+  padding-bottom: 4rem;
+}
+
+.hospital-appointment-info {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 6px 28px rgba(15, 23, 42, 0.08);
+}
+
+.hospital-appointment-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.hospital-appointment-steps__item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.hospital-appointment-steps__num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1a73e8;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hospital-appointment-note {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  color: #1e40af;
+}
+
+.hospital-appointment-link {
+  color: #1a73e8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.hospital-appointment-link:hover {
+  color: #1557b0;
+  text-decoration: none;
+}
+
+.hospital-appointment-form-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.1);
+}
+
+.hospital-appointment-doctor {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+}
+
+.hospital-appointment-doctor__photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  flex-shrink: 0;
+}
+
+.hospital-appointment-form .form-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #334155;
+  margin-bottom: 0.4rem;
+}
+
+.hospital-appointment-form .form-control {
+  border-radius: 10px;
+  border-color: #e2e8f0;
+  min-height: 46px;
+}
+
+.hospital-appointment-form .form-control:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+}
+
+.hospital-appointment-form textarea.form-control {
+  min-height: auto;
+}
+

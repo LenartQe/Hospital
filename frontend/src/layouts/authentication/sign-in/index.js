@@ -10,6 +10,7 @@ import MDButton from "components/MDButton";
 import HospitalAuthLayout from "layouts/authentication/components/HospitalAuthLayout";
 import { hospitalApi, parseApiError } from "api/hospitalApi";
 import { setAuth, homeRouteForRole } from "auth/authStorage";
+import { DOCTOR_PFP_FALLBACK, doctorPhoto } from "hospital-public/hospitalImages";
 
 const ROLES = [
   { key: "PATIENT", label: "Pacient" },
@@ -17,8 +18,31 @@ const ROLES = [
   { key: "ADMIN", label: "Administrim web" },
 ];
 
-const DOCTOR_PLACEHOLDER =
-  "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face";
+function DoctorLoginAvatar({ doctor }) {
+  const [img, setImg] = useState(() => doctorPhoto(doctor));
+
+  useEffect(() => {
+    setImg(doctorPhoto(doctor));
+  }, [doctor]);
+
+  return (
+    <MDBox
+      component="img"
+      src={img}
+      alt={doctor.fullName}
+      onError={() => setImg(DOCTOR_PFP_FALLBACK)}
+      sx={{
+        width: 64,
+        height: 64,
+        borderRadius: "50%",
+        objectFit: "cover",
+        border: "2px solid #fff",
+        boxShadow: "0 4px 12px rgba(15,23,42,0.12)",
+        flexShrink: 0,
+      }}
+    />
+  );
+}
 
 function roleFromQuery(param) {
   if (param === "doctor") return "DOCTOR";
@@ -43,7 +67,7 @@ export default function SignIn() {
   const selectDoctor = (doctor) => {
     setSelectedDoctorId(doctor.id);
     setEmail(doctor.email);
-    setPassword(doctor.password || "hospital123");
+    setPassword(doctor.password || "");
     setError("");
   };
 
@@ -88,7 +112,7 @@ export default function SignIn() {
     try {
       const data = await hospitalApi.auth.login({
         email: loginEmail,
-        password: password || "hospital123",
+        password: role === "PATIENT" && !password ? "guest" : password,
         role,
         doctorId: role === "DOCTOR" ? selectedDoctorId : undefined,
       });
@@ -158,20 +182,7 @@ export default function SignIn() {
                           },
                         }}
                       >
-                        <MDBox
-                          component="img"
-                          src={doctor.imageUrl || DOCTOR_PLACEHOLDER}
-                          alt={doctor.fullName}
-                          sx={{
-                            width: 64,
-                            height: 64,
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                            border: "2px solid #fff",
-                            boxShadow: "0 4px 12px rgba(15,23,42,0.12)",
-                            flexShrink: 0,
-                          }}
-                        />
+                        <DoctorLoginAvatar doctor={doctor} />
                         <MDBox sx={{ flex: 1, minWidth: 0 }}>
                           <MDTypography variant="h6" fontWeight="bold" sx={{ lineHeight: 1.3 }}>
                             {doctor.fullName}
@@ -243,26 +254,29 @@ export default function SignIn() {
             <>
               <MDBox mb={2}>
                 <MDInput
-                  type="text"
-                  label="Email (opsional)"
+                  type="email"
+                  label="Email"
                   fullWidth
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="çfarëdo@email.com"
+                  placeholder="email@shembull.com"
                   sx={{ "& .MuiInputBase-root": { minHeight: 48 } }}
                 />
               </MDBox>
               <MDBox mb={2}>
                 <MDInput
                   type="password"
-                  label="Fjalëkalimi (opsional)"
+                  label="Fjalëkalimi"
                   fullWidth
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="çfarëdo"
+                  placeholder="Fjalëkalimi i regjistrimit"
                   sx={{ "& .MuiInputBase-root": { minHeight: 48 } }}
                 />
               </MDBox>
+              <MDTypography variant="caption" color="text" display="block" mb={2}>
+                Pa llogari? Lini email-in bosh për hyrje si vizitor, ose regjistrohuni më poshtë.
+              </MDTypography>
             </>
           )}
 

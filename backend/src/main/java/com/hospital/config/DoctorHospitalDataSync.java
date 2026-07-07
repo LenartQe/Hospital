@@ -1,16 +1,13 @@
 package com.hospital.config;
 
-import com.hospital.entity.AppUser;
 import com.hospital.entity.Doctor;
-import com.hospital.entity.UserRole;
-import com.hospital.repository.AppUserRepository;
 import com.hospital.repository.DoctorRepository;
+import com.hospital.service.DoctorCredentialService;
 import com.hospital.util.DoctorCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,24 +25,19 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
       "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face";
   private static final String IMG_MIMOZA =
       "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face";
-  private static final String IMG_KADRI =
-      "https://images.unsplash.com/photo-1622253692010-21aabed25171?w=400&h=400&fit=crop&crop=face";
+  private static final String IMG_KADRI = "/images/hospital/kadri-mustafa.png";
   private static final String IMG_EMIR =
       "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face";
   private static final String IMG_BLERDON =
       "https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=400&h=400&fit=crop&crop=face";
 
   private final DoctorRepository doctorRepository;
-  private final AppUserRepository appUserRepository;
-  private final PasswordEncoder passwordEncoder;
+  private final DoctorCredentialService doctorCredentialService;
 
   public DoctorHospitalDataSync(
-      DoctorRepository doctorRepository,
-      AppUserRepository appUserRepository,
-      PasswordEncoder passwordEncoder) {
+      DoctorRepository doctorRepository, DoctorCredentialService doctorCredentialService) {
     this.doctorRepository = doctorRepository;
-    this.appUserRepository = appUserRepository;
-    this.passwordEncoder = passwordEncoder;
+    this.doctorCredentialService = doctorCredentialService;
   }
 
   @Override
@@ -135,39 +127,6 @@ public class DoctorHospitalDataSync implements CommandLineRunner {
 
   private void ensureDoctorLoginAccounts() {
     DoctorCatalog.publicDoctors(doctorRepository.findByFeaturedTrueOrderByNameAsc())
-        .forEach(this::ensureAccountForDoctor);
-  }
-
-  private void ensureAccountForDoctor(Doctor doctor) {
-    if (doctor.getEmail() == null || doctor.getEmail().isBlank()) {
-      return;
-    }
-    String email = doctor.getEmail().trim().toLowerCase();
-    AppUser user =
-        appUserRepository
-            .findByEmailAndRole(email, UserRole.DOCTOR)
-            .orElseGet(
-                () -> {
-                  AppUser created = new AppUser();
-                  created.setEmail(email);
-                  created.setRole(UserRole.DOCTOR);
-                  return created;
-                });
-    user.setFullName(doctor.getFullName());
-    user.setPhone(doctor.getPhone());
-    user.setPasswordHash(passwordEncoder.encode(AuthDataInitializer.DEMO_PASSWORD));
-    user = appUserRepository.save(user);
-
-    doctorRepository.findAll().stream()
-        .filter(d -> email.equalsIgnoreCase(d.getEmail()) && !doctor.getId().equals(d.getId()))
-        .forEach(
-            other -> {
-              other.setUserId(null);
-              other.setFeatured(false);
-              doctorRepository.save(other);
-            });
-
-    doctor.setUserId(user.getId());
-    doctorRepository.save(doctor);
+        .forEach(doctorCredentialService::ensureLoginAccount);
   }
 }

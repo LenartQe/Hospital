@@ -1,6 +1,7 @@
 package com.hospital.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -62,6 +63,11 @@ public class Doctor {
   /** Shown on the public Mjekët page and doctor login picker. */
   @Column(name = "featured", nullable = false)
   private boolean featured = false;
+
+  /** Plain-text login password for doctor portal (hashed copy stored in app_users). */
+  @Column(name = "login_password", length = 64)
+  @JsonIgnore
+  private String loginPassword;
 
   @Column(name = "created_at")
   private Instant createdAt = Instant.now();

@@ -6,7 +6,7 @@ import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 import HospitalAuthLayout from "layouts/authentication/components/HospitalAuthLayout";
-import { hospitalApi } from "api/hospitalApi";
+import { hospitalApi, parseApiError } from "api/hospitalApi";
 import { setAuth, homeRouteForRole } from "auth/authStorage";
 
 export default function SignUp() {
@@ -27,12 +27,7 @@ export default function SignUp() {
       setAuth(data);
       navigate(homeRouteForRole(data.role));
     } catch (err) {
-      try {
-        const parsed = JSON.parse(err.message);
-        setError(parsed.message || "Regjistrimi dështoi.");
-      } catch {
-        setError(err.message || "Regjistrimi dështoi.");
-      }
+      setError(parseApiError(err));
     } finally {
       setLoading(false);
     }

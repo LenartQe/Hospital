@@ -104,7 +104,7 @@ export default function HospitalDoctors() {
         const created = {
           ...result.doctor,
           loginEmail: result.loginEmail || result.doctor.email,
-          loginPassword: result.loginPassword || "hospital123",
+          loginPassword: result.loginPassword || "",
         };
         setOnboardedDoctor(created);
         openDoctorLogin(created);

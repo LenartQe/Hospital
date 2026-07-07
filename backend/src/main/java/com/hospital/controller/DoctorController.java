@@ -1,6 +1,5 @@
 package com.hospital.controller;
 
-import com.hospital.config.AuthDataInitializer;
 import com.hospital.dto.DoctorDashboardDTO;
 import com.hospital.entity.Appointment;
 import com.hospital.entity.Department;
@@ -8,6 +7,7 @@ import com.hospital.entity.Doctor;
 import com.hospital.repository.DepartmentRepository;
 import com.hospital.repository.DoctorRepository;
 import com.hospital.service.AdminDeleteService;
+import com.hospital.service.DoctorCredentialService;
 import com.hospital.service.DoctorOnboardingService;
 import com.hospital.service.DoctorService;
 import com.hospital.util.DoctorCatalog;
@@ -37,18 +37,21 @@ public class DoctorController {
   private final AdminDeleteService adminDeleteService;
   private final DoctorService doctorService;
   private final DoctorOnboardingService doctorOnboardingService;
+  private final DoctorCredentialService doctorCredentialService;
 
   public DoctorController(
       DoctorRepository doctorRepository,
       DepartmentRepository departmentRepository,
       AdminDeleteService adminDeleteService,
       DoctorService doctorService,
-      DoctorOnboardingService doctorOnboardingService) {
+      DoctorOnboardingService doctorOnboardingService,
+      DoctorCredentialService doctorCredentialService) {
     this.doctorRepository = doctorRepository;
     this.departmentRepository = departmentRepository;
     this.adminDeleteService = adminDeleteService;
     this.doctorService = doctorService;
     this.doctorOnboardingService = doctorOnboardingService;
+    this.doctorCredentialService = doctorCredentialService;
   }
 
   @GetMapping
@@ -93,7 +96,7 @@ public class DoctorController {
     apply(body, d);
     d = doctorRepository.save(d);
     d = doctorOnboardingService.onboard(d);
-    return new DoctorCreateResponse(d, d.getEmail(), AuthDataInitializer.DEMO_PASSWORD);
+    return new DoctorCreateResponse(d, d.getEmail(), doctorCredentialService.ensureLoginPassword(d));
   }
 
   @PutMapping("/{id}")

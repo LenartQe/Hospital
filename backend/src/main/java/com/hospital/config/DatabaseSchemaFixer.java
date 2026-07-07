@@ -25,6 +25,7 @@ public class DatabaseSchemaFixer implements CommandLineRunner {
     alterNullable("doctors", "department_id");
     alterNullable("appointments", "doctor_id");
     addColumnIfMissing("doctors", "featured", "TINYINT(1) NOT NULL DEFAULT 0");
+    addColumnIfMissing("doctors", "login_password", "VARCHAR(64) NULL");
     addColumnIfMissing("medicines", "specialty_key", "VARCHAR(50) NULL");
     fixDiagnosesTable();
   }

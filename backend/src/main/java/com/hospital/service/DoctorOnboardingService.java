@@ -1,13 +1,8 @@
 package com.hospital.service;
 
-import com.hospital.config.AuthDataInitializer;
-import com.hospital.entity.AppUser;
 import com.hospital.entity.Doctor;
-import com.hospital.entity.UserRole;
-import com.hospital.repository.AppUserRepository;
 import com.hospital.repository.DoctorRepository;
 import java.util.List;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,16 +19,12 @@ public class DoctorOnboardingService {
           "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face");
 
   private final DoctorRepository doctorRepository;
-  private final AppUserRepository appUserRepository;
-  private final PasswordEncoder passwordEncoder;
+  private final DoctorCredentialService doctorCredentialService;
 
   public DoctorOnboardingService(
-      DoctorRepository doctorRepository,
-      AppUserRepository appUserRepository,
-      PasswordEncoder passwordEncoder) {
+      DoctorRepository doctorRepository, DoctorCredentialService doctorCredentialService) {
     this.doctorRepository = doctorRepository;
-    this.appUserRepository = appUserRepository;
-    this.passwordEncoder = passwordEncoder;
+    this.doctorCredentialService = doctorCredentialService;
   }
 
   @Transactional
@@ -44,7 +35,7 @@ public class DoctorOnboardingService {
     }
     doctor = doctorRepository.save(doctor);
     if (doctor.getEmail() != null && !doctor.getEmail().isBlank()) {
-      ensureLoginAccount(doctor);
+      doctorCredentialService.ensureLoginAccount(doctor);
     }
     return doctor;
   }
@@ -52,25 +43,5 @@ public class DoctorOnboardingService {
   public String defaultMaleImage(Long doctorId) {
     long key = doctorId != null ? doctorId : 0L;
     return DEFAULT_MALE_IMAGES.get((int) (Math.abs(key) % DEFAULT_MALE_IMAGES.size()));
-  }
-
-  private void ensureLoginAccount(Doctor doctor) {
-    String email = doctor.getEmail().trim().toLowerCase();
-    AppUser user =
-        appUserRepository
-            .findByEmailAndRole(email, UserRole.DOCTOR)
-            .orElseGet(
-                () -> {
-                  AppUser created = new AppUser();
-                  created.setEmail(email);
-                  created.setRole(UserRole.DOCTOR);
-                  return created;
-                });
-    user.setFullName(doctor.getFullName());
-    user.setPhone(doctor.getPhone());
-    user.setPasswordHash(passwordEncoder.encode(AuthDataInitializer.DEMO_PASSWORD));
-    user = appUserRepository.save(user);
-    doctor.setUserId(user.getId());
-    doctorRepository.save(doctor);
   }
 }
